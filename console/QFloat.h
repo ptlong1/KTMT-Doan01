@@ -11,9 +11,9 @@ using namespace std;
 class QFloat
 {
 private:
-	static const int SIGNIFICANT_SIZE = 4;
-	static const int EXPONENT_SIZE = 3;
-	static const int SIZE = 8;
+	static const int SIGNIFICANT_SIZE = 112;
+	static const int EXPONENT_SIZE = 15;
+	static const int SIZE = 128;
 	int m_arr[4];
 	vector<int> convert2vt_bin(string str, int type);
 	vector<int> str_dec2bin(string str);
