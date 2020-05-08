@@ -538,6 +538,7 @@ vector<int> QInt::str_hex2bin(string str)
 			vtBin.push_back(dec_val % 2);
 			dec_val /= 2;
 		}
+		while (vtBin.size() < 4) vtBin.insert(vtBin.begin(), 0);
 		ans.insert(ans.begin(), vtBin.begin(), vtBin.end());		//insert vtBin theo thứ tự ngược, để cuối cùng bit phải nhất của kết quả sẽ ở ans[0]
 	}
 	return ans;
