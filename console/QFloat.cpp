@@ -1,12 +1,255 @@
-#include "QFloat.h"
+﻿#include "QFloat.h"
+
+QFloat& QFloat::operator=(const QFloat& other)
+{
+	if (this != &other) {
+		for (int i = 0; i < 4; i++)
+			m_arr[i] = other.m_arr[i];
+	}
+	return *this;
+}
+
+QFloat QFloat::DoiDau()
+{
+	QFloat ans = *this;
+	Daobit(ans.m_arr[0], 31);
+	return ans;
+}
+
+int QFloat::operator[](int i)
+{
+	if (i > 127 || i < 0) return 0;
+	int vti, vtj;
+	vti = i / 32;
+	vtj = i % 32;
+	return Getbit(this->m_arr[4 - 1 - vti], vtj);
+}
+
+QFloat QFloat::operator>>(int x)
+{
+	QFloat ans;
+	ans.GanDauvaMu(*this);
+	for (int i = 0; i < 112 - x; ++i)
+	{
+		int vti, vtj;
+		vti = 3 - i / 32;
+		vtj = i % 32;
+		ans.m_arr[vti] += (*this)[i + x]*(1 << vtj);
+	}
+	return ans;
+}
+
+QFloat QFloat::operator<<(int x)
+{
+	QFloat ans;
+	ans.GanDauvaMu(*this);
+	//cout << ans.toDec() << '\n';
+	for (int i = x; i < 112; ++i)
+	{
+		int vti, vtj;
+		vti = 3 - i / 32;
+		vtj = i % 32;
+		ans.m_arr[vti] += (*this)[i - x] * (1 << vtj);
+	}
+	return ans;
+}
 
 
 
+bool QFloat::operator>=(QFloat other)
+{
+	for (int i = 111; i >= 0; --i)
+	{
+		if ((*this)[i] > other[i]) return true;
+		if ((*this)[i] < other[i]) return false;
+	}
+	return true;
+}
+
+QFloat QFloat::CongPhanMu(int x)
+{
+	int nho = 0;
+	QFloat ans = *this;
+	for (int i = 112; i < 127; ++i)
+	{
+		int vti, vtj;
+		vti = 3 - i / 32;
+		vtj = i % 32;
+		int tmp = ans[i] + Getbit(x, i - 112) + nho;
+		if (tmp % 2 && ans[i] == 0) Batbit(ans.m_arr[vti], vtj);
+		if (!(tmp % 2) && ans[i] == 1) Daobit(ans.m_arr[vti], vtj);
+		nho = tmp / 2;
+	}
+	return ans;
+}
+
+void QFloat::GanDauvaMu(QFloat x)
+{
+	for (int i = 127; i >= 112; --i)
+	{
+		if (x[i] != (*this)[i]) Daobit(this->m_arr[3 - i / 32], i % 32);
+	}
+}
+
+QFloat::QFloat()
+{
+	for (int i = 0; i < 4; ++i) m_arr[i] = 0;
+}
+
+QFloat QFloat::operator+(QFloat other)
+{
+	QFloat ans;
+	QFloat a, b;
+	a = *this;
+	b = other;
+
+	//tinh so x trong 2^x cua tung bien
+	int mu_1, mu_2;
+	mu_1 = mu_2 = 0;
+	for (int i = 126; i >= 112; --i)
+	{
+		mu_1 = mu_1 * 2 + (*this)[i];
+		mu_2 = mu_2 * 2 + other[i];
+	}
+	//day khong phai la so duoi dang bias, ma la so duoi dang unsigned
+	//mu_1 -= (1 << 14) - 1; bias
+	//mu_2 -= (1 << 14) - 1; bias
+
+	//so sanh, dua ve dang a > b
+	if (mu_2 > mu_1 || (mu_1 == mu_2 && b >= a)) swap(a, b), swap(mu_1, mu_2);
+	
+	//chenh lech so mu
+	int mu_diff = mu_1 - mu_2;
+
+	if (mu_diff > 112) return a;
+	//dua b ve dang ko chuan hoa
+	b = b >> mu_diff;
+	int vt1 = 112 - mu_diff;
+	//them bit 1 dung dau
+	Batbit(b.m_arr[3 - vt1 / 32], vt1 % 32);
+
+	int nho = 0;
+	//cung dau
+	if (a[127] == b[127])
+	{
+		ans.GanDauvaMu(a);
+		nho = 0;
+		for (int i = 0; i < 112; ++i)
+		{
+			if ((a[i] + b[i] + nho) % 2)
+				Batbit(ans.m_arr[3 - i / 32], i % 32);
+			nho = (a[i] + b[i] + nho) / 2;
+		}
+		//neu so b la dang ko chuan
+		if (mu_diff > 0)
+		{
+			if (nho == 1)
+			//nho = 1, cong vao so 1 truoc dau phay
+			{
+				//1.0 10.
+				ans = ans >> 1;
+				// day so 0 dung dau phan tri
+				//Batbit(ans.m_arr[3 - 111 / 32], 111 % 32);
+				//cong 1 vao phan mu
+				ans = ans.CongPhanMu(1);
+				//them vao phan mu 1 don vi
+			}
+		}
+		else
+		{
+			//neu nhu b o dang chuan, cong 2 so 1 dung dau
+			//2 trung hop
+			// 11. 10.
+			ans = ans >> 1;
+			if (nho == 1) // 11.
+			{
+				Batbit(ans.m_arr[3 - 111 / 32], 111 % 32); // bat bit 1
+			}
+			ans = ans.CongPhanMu(1);
+			//tang phan mu len 1
+		}
+	}
+	else
+	{
+		//khac dau, a- b
+		//key qua cuoi cung lay theo dau a
+		ans.GanDauvaMu(a);
+		nho = 0;
+		for (int i = 0; i < 112; ++i)
+		{
+			if ((a[i] - b[i] + nho + 2) % 2 == 1)
+				Batbit(ans.m_arr[3 - i / 32], i % 32);
+			if (a[i] - b[i] + nho < 0) nho = -1;
+			else nho = 0;
+		}
+		if (mu_diff > 0)
+		{
+			//cout << "***";
+			// 1.xxx - 0.xxx
+			if (nho == -1)
+			//TH tieu bien so 1 truoc dau phay
+			// 0.xxxx
+			{
+				//cout << "****";
+				int vt = -1;
+				//tim vi tri so 1 gan nhat
+				for (int i = 111; i >= 0; --i)
+					if (ans[i] == 1)
+					{
+						vt = i;
+						break;
+					}
+				cout << vt << '\n';
+				//dua no ve dang chuan
+				ans = ans << (112 - vt);
+				//tru di 1 luong tieu ton o phan mu
+				ans = ans.CongPhanMu(-(112 - vt));
+			}
+		}
+		else
+		{
+			//neu ca 2 o dang chuan
+			if (nho == 0) // 1.xxx - 1.xxx = 0.xxxx
+				// khong co th nho == 1 vi a >= b
+			{
+				int vt = -1;
+				for (int i = 111; i >= 0; --i)
+					if (ans[i] == 1)
+					{
+						vt = i;
+						break;
+					}
+				if (vt == -1) // neu tim khong ra aka 2 so bang nhau
+				{
+					/*
+					for (int i = 126; i > 111; --i)
+						if (ans[i] == 1)
+							Daobit(ans.m_arr[3 - i / 32], i % 32);
+					*/
+					QFloat zero;
+					return zero;
+					//tra ve zero
+			}
+				else
+				{
+					ans = ans << (112 - vt);
+					ans = ans.CongPhanMu(-(112 - vt));
+				}
+			}
+		}
+	}
+	return ans;
+}
+
+QFloat QFloat::operator-( QFloat other)
+{
+	return *this + other.DoiDau();
+}
 
 QFloat::QFloat(vector<int> vtBin) {
 	for (int i = 0; i < vtBin.size(); i++)
 		if (vtBin[i] == 1) setbit1(127 - i);
-		else setbit0(127 -i);
+		else setbit0(127 - i);
 }
 
 QFloat::QFloat(string str, int base) {
@@ -23,6 +266,7 @@ void QFloat::ScanQFloat(istream& f, int base)
 	QFloat ans(str, base);
 	*this = ans;
 }
+
 vector<int> QFloat::convert2vt_bin(string str, int base)
 {
 	/*
@@ -85,6 +329,7 @@ void QFloat::str_devide2(string& str) {
 	ans = ans[0] == '0' ? ans.substr(1) : ans;
 	str = ans;
 }
+
 void QFloat::str_multi2(string& str) {
 	/*
 	Nhân một string dạng "03456" tức là 0.3456
@@ -100,6 +345,7 @@ void QFloat::str_multi2(string& str) {
 
 	while (str.back() == '0') str.pop_back();    //xÓa các kí tự '0' ở cuối
 }
+
 vector<int> QFloat::str_dec2bin(string str) {
 	/*
 	Chuyển string base 10 về vector<int> base 2
@@ -189,6 +435,7 @@ vector<int> QFloat::get_snfcant() const {
 		ans.push_back(getBit(i));
 	return ans;
 }
+
 vector<int> QFloat::multi_snfcant(vector<int> s1, vector<int> s2) {
 	vector<int> ans;
 	s1.insert(s1.begin(), 1);		//trả lại bit 1 mặc định
@@ -293,9 +540,6 @@ QFloat QFloat::operator *(const QFloat& other)
 	return ans;
 }
 
-
-/*---------------------------------------------------------*/
-/*---------------------------------------------------------*/
 QFloat QFloat::getZero()
 {
 	return QFloat();
@@ -320,11 +564,6 @@ QFloat QFloat::getNaN()
 	return QFloat();
 }
 
-QFloat::QFloat()
-{
-	for (int i = 0; i < 4; i++)
-		m_arr[i] = 0;
-}
 
 QFloat::~QFloat()
 {
@@ -352,7 +591,7 @@ int QFloat::getExp()
 
 string QFloat::getSignificand()
 {
-	
+
 	int i = 0;
 	while (i < 112) {
 		if (this->getBit(i) == 1)
@@ -367,7 +606,7 @@ string QFloat::getSignificand()
 	{
 		significand[111 - i] = this->getBit(i) + '0';
 	}
-	
+
 	return significand;
 }
 
@@ -387,7 +626,7 @@ void QFloat::setbit0(int i)
 	m_arr[3 - i / 32] = (~(1 << (i % 32))) & m_arr[3 - i / 32];
 }
 
-int QFloat::checkExponent() 
+int QFloat::checkExponent()
 {
 	int exp = this->getExp();
 	if (exp == -16383) return 0;
@@ -439,9 +678,9 @@ string QFloat::toBin()
 	string significand = this->getSignificand(); //phan tri
 	int exp = this->getExp(); //phan mu
 	string rs = "1";
-	
+
 	if (checkExponent() == 0)
-	{	
+	{
 		/*------------bieu dien so khog chuan----------*/
 		rs = string(-exp + 1, '0') + significand;
 		rs[1] = '.';
@@ -453,7 +692,7 @@ string QFloat::toBin()
 		significand += string(SIGNIFICANT_SIZE - significand.size(), '0');
 	}
 	rs += significand;
-	
+
 	//ko phai 2 truong hop tren
 	if (exp >= 0)
 	{
@@ -468,7 +707,7 @@ string QFloat::toBin()
 			rs += num0;
 		}
 	}
-	else 
+	else
 	{
 		string num0(-exp + 1, '0');
 		num0[1] = '.';
@@ -481,12 +720,12 @@ string QFloat::toBin()
 
 string QFloat::toDec()
 {
-	if (this->isNaN()) 
+	if (this->isNaN())
 		return "NaN";
-	
-	if (this->isInf()) 
+
+	if (this->isInf())
 		return "Inf";
-	
+
 	if (isZero())
 		return "0";
 
@@ -509,16 +748,18 @@ string QFloat::toDec()
 			break;
 		x++;
 	}
-	
-	temp.erase(0,x); //loai bo cac so 0 dung dau vo nghia
+
+	temp.erase(0, x); //loai bo cac so 0 dung dau vo nghia
 
 	//ko phai 2 truong hop tren
 	int expNew = exp - significand.size();//vi dich chuyen dau phay qua tan cung ben phai trong phan tri
 	QInt numInt;
+	//cout << significand << '\n';
 	numInt = temp;
+	//cout << numInt.Dec() << '\n';
 	BigNumber numDec(numInt.toDec());
 	numDec.multiPow2(expNew);
-	
+	//cout << numDec.getNum() << '\n';
 	rs.clear();
 	if (sign == 1) {
 		rs += '-';
@@ -529,17 +770,17 @@ string QFloat::toDec()
 	return rs;
 }
 
-void QFloat::PrintQFloat(ostream & f, int base)
+void QFloat::PrintQFloat(ostream& f, int base)
 {
 	string ans;
 	if (base == 2) f << this->toBin();
 	else if (base == 10) f << this->toDec();
 }
 
-QFloat QFloat::operator/(const QFloat & other)
+QFloat QFloat::operator/(const QFloat& other)
 {
 	QFloat temp = other;
-	
+
 	if (temp.isNaN() || this->isNaN())
 		return getNaN();
 
@@ -550,7 +791,7 @@ QFloat QFloat::operator/(const QFloat & other)
 
 	//co la vo cung hay k
 	if (this->isInf()) {
-		if (temp.isInf()){
+		if (temp.isInf()) {
 			return getNaN();
 		}
 		return getInf();
@@ -565,17 +806,17 @@ QFloat QFloat::operator/(const QFloat & other)
 	int exp2 = temp.getExp();
 
 	int newExp = exp1 - exp2;
-	
+
 	if (newExp > 16384 - 112) {
 		//thong bao overflow
-	} 
+	}
 
 	if (newExp < -16382 - 112) {
 		//thong bao underflow
 	}
 	/*--------------------------------------------------------*/
 
- 	string significand1 = this->getSignificand();
+	string significand1 = this->getSignificand();
 	string significand2 = temp.getSignificand();
 	string value1 = significand1, value2 = significand2;
 
@@ -589,13 +830,13 @@ QFloat QFloat::operator/(const QFloat & other)
 	QInt numInt1(value1, 2), numInt2(value2, 2);
 	pair<QInt, QInt> q_r[8];
 	q_r[0] = numInt1 / numInt2;
-	
+
 	string value = q_r[0].first.toBin();
 
 	for (int i = 1; i < 8; i++) {
 		q_r[i] = q_r[i - 1].second / numInt2;
 		value += q_r[i].first.toBin();
- 	}
+	}
 
 	int e1 = significand1.size() - significand2.size();
 	int e2 = q_r[0].first.toBin().size();
@@ -608,7 +849,7 @@ QFloat QFloat::operator/(const QFloat & other)
 	else {
 		e3 = -pos1 + e1 - (e2 - 1);
 	}
-	
+
 	newExp += e3;
 
 	if (newExp < -16382) {
@@ -652,25 +893,8 @@ QFloat QFloat::operator/(const QFloat & other)
 	if (this->getSign() != temp.getSign()) {
 		rs.setbit1(127);
 	}
-	
+
 	return rs;
-}
-
-QFloat & QFloat::operator=(const QFloat & other)
-{
-	if (this != &other) {
-		for (int i = 0; i < 4; i++)
-			m_arr[i] = other.m_arr[i];
-	}
-
-	return *this;
-	// TODO: insert return statement here
-}
-
-int QFloat::operator[] (int i)// gia tri bit thu i
-{
-	if (i > 127 || i < 0) return 0;
-	return getBit(i);
 }
 
 string QFloat::divideSignificand(string snf1, string snf2)
@@ -680,3 +904,4 @@ string QFloat::divideSignificand(string snf1, string snf2)
 	q_r[0] = numInt1 / numInt2;
 	return string();
 }
+

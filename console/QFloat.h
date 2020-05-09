@@ -3,13 +3,13 @@
 #include <string>
 #include "QInt.h"
 #include "BigNumber.h"
+#include "BitHandle.h"
 
 using namespace std;
 class QFloat
 {
 private:
 	int m_arr[4];
-
 	bool isZero() const;//kiem tra co phai la so 0 hay k?
 	bool isInf() const;//Kiem tra co phai la so vo cung lon hay khong?
 	bool isNaN() const;//Kiem tra co la truong loi hay?
@@ -18,7 +18,6 @@ private:
 	QFloat getInf();
 	QFloat getNaN();
 
-private:
 	static const int SIGNIFICANT_SIZE = 112;
 	static const int EXPONENT_BIAS_VALUE = 16383; // = 2^14 -1
 	static const int EXPONENT_SIZE = 15;
@@ -38,6 +37,7 @@ private:
 	void handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snfc);
 	/*-------------------------------------------------------------*/
 	string divideSignificand(string snf1, string snf2);
+
 public:
 	QFloat();
 	QFloat(vector<int> vtBin);
@@ -48,27 +48,33 @@ public:
 	int getExp();
 	string getSignificand();
 	int checkExponent();//kiem tra phan mu co bang 00...00 hay 11...11 khong
-	
 
+	
 	string toDec();
 	string toBin();
 
 	void ScanQFloat(istream& f, int base);
 	void PrintQFloat(ostream& f, int base);
 
-	//QFloat operator + (const QFloat& other);
-	//QFloat operator - (const QFloat& other);
+	QFloat operator + ( QFloat other);
+	QFloat operator - ( QFloat other);
 	QFloat operator * (const QFloat& other);
 	QFloat operator / (const QFloat& other);
 
 	QFloat& operator = (const QFloat& other);
 
+
+
 	int getBit(int i) const;
 	void setbit1(int i);
 	void setbit0(int i);
-	//QFloat DoiDau();
+
+	QFloat DoiDau();
 	int operator [] (int i);
-
-	/*---------------------------------------*/
-
+	QFloat operator >> (int x);
+	QFloat operator << (int x);
+	bool operator >= (QFloat other);
+	QFloat CongPhanMu(int x);
+	void GanDauvaMu(QFloat x);
 };
+
