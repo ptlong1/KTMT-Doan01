@@ -639,22 +639,23 @@ void QFloat::PrintQFloat(ostream& f, int base)
 QFloat QFloat::operator/(const QFloat& other)
 {
 	QFloat temp = other;
-
+	
 	if (temp.isNaN() || this->isNaN())
 		return getNaN();
 
+ 	if (this->isInf()) {
+		if (temp.isInf()){
+			return getNaN();
+		}
+		return getInf();
+	}
+	
 	//Kiem tra chia 0
 	if (temp.isZero()) {
 		return getNaN();
 	}
 
 	//co la vo cung hay k
-	if (this->isInf()) {
-		if (temp.isInf()) {
-			return getNaN();
-		}
-		return getInf();
-	}
 
 	if (this->isZero()) {
 		return getZero();
@@ -665,103 +666,132 @@ QFloat QFloat::operator/(const QFloat& other)
 	int exp2 = temp.getExp();
 
 	int newExp = exp1 - exp2;
+	
+	if (newExp >=EXPONENT_BIAS_VALUE + 1) {
+		return getInf();
+	} 
 
-	if (newExp > 16384 - 112) {
-		//thong bao overflow
+	if (newExp < -EXPONENT_BIAS_VALUE + 2 - SIGNIFICANT_SIZE) {
+		return getZero();
 	}
 
-	if (newExp < -16382 - 112) {
-		//thong bao underflow
-	}
 	/*--------------------------------------------------------*/
 
-	string significand1 = this->getSignificand();
+ 	string significand1 = this->getSignificand();
 	string significand2 = temp.getSignificand();
-	string value1 = significand1, value2 = significand2;
+	/*if (significand1.size() < exp1)
+		significand1 += string(exp1 - significand1.size(), '0');
+	if (significand2.size() < exp2)
+		significand2 += string(exp2 - significand2.size(), '0');*/
 
-	if (exp1 != -16383) {
-		value1 = "1" + value1;
-	}
-	if (exp2 != -16383) {
-		value2 = "1" + value2;
-	}
+	string value1 = "0", value2 = "0";
 
-	QInt numInt1(value1, 2), numInt2(value2, 2);
-	pair<QInt, QInt> q_r[8];
-	q_r[0] = numInt1 / numInt2;
+	if (exp1 != -EXPONENT_BIAS_VALUE)
+		value1 = "1";
+	if (exp2 != -EXPONENT_BIAS_VALUE) 
+		value2 = "1";
+	
 
-	string value = q_r[0].first.toBin();
+	int e_snf12 = significand1.size() - significand2.size();
+	/*if (significand1 == "0") 
+		e_snf12 += 1;
+	else*/
+		value1 += significand1; 
 
-	for (int i = 1; i < 8; i++) {
-		q_r[i] = q_r[i - 1].second / numInt2;
-		value += q_r[i].first.toBin();
-	}
+	/*if (significand2 == "0")
+		e_snf12 -= 1;
+	else*/
+		value2 += significand2;
 
-	int e1 = significand1.size() - significand2.size();
-	int e2 = q_r[0].first.toBin().size();
-	int e3;
+	//Chia phan tri
+	QFloat div_snf;
+	div_snf = divideSignificand(value1, value2);
+	
+	//Xu ly dau phay phan tri
+	int exp_snf = div_snf.getExp();
 
-	int pos1 = value.find('1', 0);
-	if (pos1 != 0) {
-		e3 = -pos1 + e1;
-	}
-	else {
-		e3 = -pos1 + e1 - (e2 - 1);
-	}
-
-	newExp += e3;
-
-	if (newExp < -16382) {
-		e3 = -16382 - newExp;
-		newExp = -16383; //-> 000...00
-		value = string(e3, '0');
-		value.resize(112);
-
-		QFloat rs;
-		for (int i = 0; i < 4; i++)
-			rs.m_arr[i] = 0;
-		for (int i = 0; i < 112; i++) {
-			if (value[111 - i] == '1')
-				rs.setbit1(i);
-		}
-		if (this->getSign() != temp.getSign()) {
-			rs.setbit1(127);
-		}
-
-		return rs;
-
-	}
-
-	if (newExp > 16384) {
-
-	}
-	value.erase(0, 1);
-	value.resize(112);
+	//Xu ly phan mu (exp va phan mu trong phan tri)
+	newExp += (exp_snf) - e_snf12 + EXPONENT_BIAS_VALUE;
+	
+	/*-----------------------------------------------------------------------------*/
 	QFloat rs;
-	for (int i = 0; i < 4; i++)
-		rs.m_arr[i] = 0;
-	for (int i = 0; i < 112; i++) {
-		if (value[111 - i] == '1')
-			rs.setbit1(i);
-	}
-	newExp += 16383;
-	for (int i = 112; i < 127; i++) {
+	rs = div_snf;
+	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
 		if ((newExp >> (i - 112)) & 1 == 1)
 			rs.setbit1(i);
-	}
-	if (this->getSign() != temp.getSign()) {
-		rs.setbit1(127);
+		else
+			rs.setbit0(i);
 	}
 
+	if (this->getSign() != temp.getSign())
+		rs.setbit1(127);
+
+	
 	return rs;
 }
 
 string QFloat::divideSignificand(string snf1, string snf2)
 {
 	QInt numInt1(snf1, 2), numInt2(snf2, 2);
-	pair<QInt, QInt> q_r[8];
+	pair<QInt, QInt> q_r[20];
 	q_r[0] = numInt1 / numInt2;
-	return string();
+	
+	string value = q_r[0].first.toBin();
+	int exp_snf = value.size()-1;
+
+	/*Chia lay thuong co nhieu hon 112 so co nghia*/
+	for (int i = 1; i < 20; i++) {
+		string  tmp;
+		q_r[i] = (q_r[i - 1].second << 15) / numInt2; //Dich phai 15 bit (*2^15)
+		tmp = q_r[i].first.toBin();
+		if (tmp.size() < 15) 
+			tmp = string(15 - tmp.size(), '0') + tmp;
+		value += tmp;
+	}
+
+	//Xử lý phần mũ dư ra
+	exp_snf += /*-exp_proccess(snf1) + exp_proccess(snf2)*/ - exp_proccess(value);//2^exp_snf
+	/*if (snf2 == "1") {
+		exp_snf += snf1.size() - 1;
+	}*/
+	exp_snf = exp_snf + EXPONENT_BIAS_VALUE;
+	
+	//Xử lý đưa về dạng formalize: xxxxxx
+	int pos1_value = value.find('1', 0);
+	if (pos1_value != -1)
+		value.erase(0, pos1_value + 1);
+	
+	if (value.size() < SIGNIFICANT_SIZE)
+		value += string(SIGNIFICANT_SIZE - value.size(), '0');
+	else if (value.size() > SIGNIFICANT_SIZE)
+		value.resize(SIGNIFICANT_SIZE);
+
+	//Khoi tao ket qua
+	QFloat rs;
+	
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++) {
+		if (value[SIGNIFICANT_SIZE -1- i] == '1')
+			rs.setbit1(i);
+	}
+
+	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
+		if ((exp_snf >> (i - SIGNIFICANT_SIZE)) & 1 == 1)
+			rs.setbit1(i);
+	}
+
+	/*QFloat x = rs * QFloat("0.45703125", 10);
+	cout << x.toDec() << endl;*/
+
+	return rs;
+
+}
+
+int QFloat::exp_proccess(string snf)
+{
+	if (snf[0] == '0') 
+		return snf.find('1', 0);
+
+	return 0;
 }
 
 void QFloat::setNaN() {
