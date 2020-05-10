@@ -59,28 +59,21 @@ string QInt::toDec()
 		temp = temp.getTowComplement();
 
 	BigNumber numDec;
-	numDec = temp.m_arr[0];
+	numDec = 0;
 
-	for (int i = 1; i <= 3; i++) {
+	for (int i = 0; i <= 3; i++) {
 		BigNumber k;
 		k = temp.m_arr[i];
-		numDec.multiPow2(32);
+		k.multiPow2(32*(3-i));
 		numDec = numDec + k;
 	}
 
 	rs = numDec.getNum();
 
-	int i = 0;
-	for (; i < rs.length(); i++) {
-		if (rs[i] != '0')
-			break;
-	}
 	if (signThis == 1) {
-		i--;
-		rs[i] = '-';
+		rs = '-' + rs;
 	}
 
-	rs.erase(0, i);
 	if (rs.empty()) rs.push_back('0');
 	return rs;
 }
@@ -98,7 +91,7 @@ string QInt::toBin()
 		if (rs[i] != '0')
 			break;
 	}
-	//rs.erase(0, i);
+	rs.erase(0, i);
 	if (rs.empty()) rs.push_back('0');
 	return rs;
 }
