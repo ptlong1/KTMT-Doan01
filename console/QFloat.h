@@ -10,9 +10,7 @@ class QFloat
 {
 private:
 	int m_arr[4];
-	bool isZero() const;//kiem tra co phai la so 0 hay k?
-	bool isInf() const;//Kiem tra co phai la so vo cung lon hay khong?
-	bool isNaN() const;//Kiem tra co la truong loi hay?
+	
 
 	QFloat getZero();
 	QFloat getInf();
@@ -22,21 +20,29 @@ private:
 	static const int EXPONENT_BIAS_VALUE = 16383; // = 2^14 -1
 	static const int EXPONENT_SIZE = 15;
 	static const int SIZE = 128;
+	
+	//Hàm cho scanf
 	vector<int> convert2vt_bin(string str, int type);
 	vector<int> str_dec2bin(string str);
 	vector<int> str_hex2bin(string str);
 	vector<int> str_bin2bin(string str);
 	void str_devide2(string& str);
 	void str_multi2(string& str);
-	vector<int> add_exponent(vector<int>, vector<int>);
+	//Hàm cho operator*
 	vector<int> get_exponent() const;
 	vector<int> get_snfcant() const;
-	vector<int> multi_snfcant(vector<int>, vector<int>);
-	bool check_all_bit0(vector<int>);
+	vector<int> get_full_snfcant() const;
+	bool check_all_bit0(vector<int>) const;
+	bool check_all_bit1(vector<int>) const;
 	void set_all_bit0(vector<int>&);
+	void set_all_bit1(vector<int>&);
+	vector<int> add_exponent(vector<int>, vector<int>, int carry);
+	vector<int> multi_snfcant(vector<int>, vector<int>, int& carry);
 	void handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snfc);
 	/*-------------------------------------------------------------*/
-	string divideSignificand(string snf1, string snf2);
+	//Hàm cho operator /
+	QFloat divideSignificand(string snf1, string snf2);
+	int exp_proccess(string snf);
 
 public:
 	QFloat();
@@ -44,7 +50,16 @@ public:
 	QFloat(string str, int base);
 	~QFloat();
 
-	int getSign();//0: duong, 1: am
+	bool isZero() const;//kiem tra co phai la so 0 hay k?
+	bool isInf() const;//Kiem tra co phai la so vo cung lon hay khong?
+	bool isNaN() const;//Kiem tra co la truong loi hay?
+	bool isDenorm() const; //Kiem tra so khong chuan
+
+	void setZero();
+	void setNaN();
+	void setInf(int sign);
+
+	int getSign() const;//0: duong, 1: am
 	int getExp();
 	string getSignificand();
 	int checkExponent();//kiem tra phan mu co bang 00...00 hay 11...11 khong
@@ -55,6 +70,7 @@ public:
 
 	void ScanQFloat(istream& f, int base);
 	void PrintQFloat(ostream& f, int base);
+	void PrintQFloat1(ostream& f, int base);
 
 	QFloat operator + ( QFloat other);
 	QFloat operator - ( QFloat other);
