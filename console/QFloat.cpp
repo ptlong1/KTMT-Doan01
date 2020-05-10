@@ -435,7 +435,7 @@ QFloat QFloat::getInf()
 {
 	QFloat x;
 	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
-		setbit1(i);
+		x.setbit1(i);
 	}
 	return x;
 }
@@ -444,10 +444,10 @@ QFloat QFloat::getNaN()
 {
 	QFloat x;
 	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
-		setbit1(i);
+		x.setbit1(i);
 	}
-	setbit1(111);
-	return QFloat();
+	x.setbit1(111);
+	return x;
 }
 
 
