@@ -40,7 +40,8 @@ private:
 	vector<int> multi_snfcant(vector<int>, vector<int>, int& carry);
 	void handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snfc);
 	/*-------------------------------------------------------------*/
-	string divideSignificand(string snf1, string snf2);
+	//Hàm cho operator /
+	QFloat divideSignificand(string snf1, string snf2);
 	int exp_proccess(string snf);
 
 public:
