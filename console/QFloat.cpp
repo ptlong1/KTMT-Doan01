@@ -455,7 +455,7 @@ QFloat::~QFloat()
 {
 }
 
-int QFloat::getSign()
+int QFloat::getSign() const
 {
 	return this->getBit(127);
 }
@@ -632,8 +632,8 @@ string QFloat::toDec()
 void QFloat::PrintQFloat(ostream& f, int base)
 {
 	string ans;
-	if (base == 2) f << this->toBin();
-	else if (base == 10) f << this->toDec();
+	if (base == 2) f << this->toBin()<<endl;
+	else if (base == 10) f << this->toDec()<<endl;
 }
 
 QFloat QFloat::operator/(const QFloat& other)
@@ -782,16 +782,30 @@ void QFloat::setInf(int sign) {
 		setbit0(SIZE - 2 - EXPONENT_SIZE - i);
 }
 bool QFloat::isZero() const {
-	return check_all_bit0(get_exponent()) && check_all_bit0(get_snfcant());
+	for (int i = 0; i < SIZE-1; i++)
+		if (getBit(i) != 0) return false;
+	return true;
 }
 bool QFloat::isDenorm() const {
-	return check_all_bit0(get_exponent()) && !check_all_bit0(get_snfcant());
+	for (int i = 0; i < EXPONENT_SIZE; i++)
+		if (getBit(SIZE - 2 - i) != 0) return false;
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+		if (getBit(SIZE - 2 - EXPONENT_SIZE - i) != 0) return true;
+	return false;
 }
 bool QFloat::isInf() const {
-	return check_all_bit1(get_exponent()) && check_all_bit0(get_snfcant());
+	for (int i = 0; i < EXPONENT_SIZE; i++)
+		if(getBit(SIZE - 2 - i)!=1) return false;
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+		if(getBit(SIZE - 2 - EXPONENT_SIZE - i)!=0) return false;
+	return true;
 }
 bool QFloat::isNaN() const {
-	return check_all_bit1(get_exponent()) && !check_all_bit0(get_snfcant());
+	for (int i = 0; i < EXPONENT_SIZE; i++)		
+		if(getBit(SIZE - i - 2)!=1) return false;
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+		if (getBit(SIZE - 2 - EXPONENT_SIZE - i) != 0) return true;
+	return false;
 }
 
 
@@ -881,7 +895,7 @@ vector<int> QFloat::add_exponent(vector<int> exp1, vector<int> exp2, int carry0)
 	vector<int> ans;
 	vector<int> bias;
 	bias.assign(EXPONENT_SIZE, 1);
-	bias[0] = 0;
+	bias[0] = 0;		//số bias
 	int flag = -1; //cờ mặc định là không thuộc trường hợp đặc biệt
 	int sum = 0;
 	int carry = carry0;
@@ -920,7 +934,7 @@ void QFloat::handle_multi_special_case(int flag, vector<int>& exp, vector<int>& 
 	*/
 	if (flag == -2 || flag == -3) {	//underflow
 		//tính giá trị mũ
-		int exp_val = 0;
+		long long exp_val = 0;
 		for (int i = 0; i < EXPONENT_SIZE; i++)
 			exp_val += exp[i] * pow(2, EXPONENT_SIZE - i - 1);
 		exp_val -= pow(2, EXPONENT_SIZE - 1) - 1;
@@ -948,7 +962,7 @@ QFloat QFloat::operator*(const QFloat& other)
 	else if (flag1*flag2 == 3) ans.setNaN();   //zero*inf=>NaN
 	else if (flag1*flag2 == 15) {			//inf*binhthuong = (dau bth)inf
 		if (this->isInf()) ans.setInf(this->getSign());
-		else ans.setInf(other.setSign());
+		else ans.setInf(other.getSign());
 	}
 	else {								//cả hai số đều bình thường
 		int carry = 0;			//carry nếu phần trị nhân vượt quá 2 và phải normalize
@@ -970,3 +984,25 @@ QFloat QFloat::operator*(const QFloat& other)
 	}
 	return ans;
 }
+
+void QFloat::PrintQFloat1(ostream& f, int base)	//Hàm test 
+{
+	if (base == 2) {
+		for (int i = 0; i < SIZE; i++) {
+			f << getBit(SIZE - 1 - i);
+			if (i == 0 || i == 15) f << " ";
+		}
+		f << endl;
+	}
+	else if (base == 10) {
+		double ans = 0;
+		long exp = 0;
+		for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+			ans += getBit(SIZE-2-EXPONENT_SIZE-i)* pow(2, -i - 1);
+		ans += 1;
+		for (int i = 0; i < EXPONENT_SIZE; i++)
+			exp += getBit(SIZE-2-i)*pow(2, EXPONENT_SIZE - i - 1);
+		exp -= pow(2, EXPONENT_SIZE - 1) - 1;
+		f << ans * pow(2, exp) << endl;
+	}
+}	   //Hàm test

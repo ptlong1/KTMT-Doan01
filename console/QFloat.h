@@ -51,12 +51,13 @@ public:
 	bool isZero() const;//kiem tra co phai la so 0 hay k?
 	bool isInf() const;//Kiem tra co phai la so vo cung lon hay khong?
 	bool isNaN() const;//Kiem tra co la truong loi hay?
+	bool isDenorm() const; //Kiem tra so khong chuan
 
-	bool setZero();
-	bool setNaN();
-	bool setInf(int sign);
+	void setZero();
+	void setNaN();
+	void setInf(int sign);
 
-	int getSign();//0: duong, 1: am
+	int getSign() const;//0: duong, 1: am
 	int getExp();
 	string getSignificand();
 	int checkExponent();//kiem tra phan mu co bang 00...00 hay 11...11 khong
@@ -67,6 +68,7 @@ public:
 
 	void ScanQFloat(istream& f, int base);
 	void PrintQFloat(ostream& f, int base);
+	void PrintQFloat1(ostream& f, int base);
 
 	QFloat operator + ( QFloat other);
 	QFloat operator - ( QFloat other);
