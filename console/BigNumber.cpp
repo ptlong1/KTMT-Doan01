@@ -48,58 +48,50 @@ string BigNumber::getNum()
 
 BigNumber BigNumber::operator+(const BigNumber & other)
 {
-	BigNumber rs;
-	
-	
-	this->fixNum();
-	rs = other;
-	rs.fixNum();
+	string str1 = m_num;
+	string str2 = other.m_num;
 
-	BigNumber temp = *this;
-	int min = m_num.size();
-	if (rs.m_num.size() < this->m_num.size()) {
-		temp = rs;
-		rs = m_num;
-		min = temp.m_num.size();
+	if (str1.length() > str2.length())
+		swap(str1, str2);
+
+	// Take an empty string for storing result 
+	string str = "";
+
+	// Calculate length of both string 
+	int n1 = str1.length(), n2 = str2.length();
+
+	// Reverse both of strings 
+	reverse(str1.begin(), str1.end());
+	reverse(str2.begin(), str2.end());
+
+	int carry = 0;
+	for (int i = 0; i < n1; i++)
+	{
+		// Do school mathematics, compute sum of 
+		// current digits and carry 
+		int sum = ((str1[i] - '0') + (str2[i] - '0') + carry);
+		str.push_back(sum % 10 + '0');
+
+		// Calculate carry for next step 
+		carry = sum / 10;
 	}
 
-	int size_rs = rs.m_num.size();
-	int size_temp = temp.m_num.size();
-
-	bool carry = false;
-	for (int i = 0; i < min; i++) {
-		char x = rs.m_num[size_rs - 1 - i] + temp.m_num[size_temp - 1 - i] - '0';
-
-		if (carry) {
-			x++;
-			carry = false;
-		}
-
-		if (x > '9') {
-			x -= 10;
-			carry = true;
-		}
-
-		rs.m_num[size_rs - 1 - i] = x;
+	// Add remaining digits of larger number 
+	for (int i = n1; i < n2; i++)
+	{
+		int sum = ((str2[i] - '0') + carry);
+		str.push_back(sum % 10 + '0');
+		carry = sum / 10;
 	}
 
-	for (int i = size_rs - 2 - min; i >= 0 && carry; i--) {
-		if (carry) {
-			rs.m_num[i]++;
-			carry = false;
-		}
+	// Add remaining carry 
+	if (carry)
+		str.push_back(carry + '0');
 
-		if (rs.m_num[i] > '9') {
-			rs.m_num[i] -= 10;
-			carry = true;
-		}
-	}
+	// reverse resultant string 
+	reverse(str.begin(), str.end());
 
-	if (carry) {
-		rs.m_num = "1" + rs.m_num;
-	}
-
-	return rs;
+	return BigNumber(str);
 }
 
 void BigNumber::multi2()
