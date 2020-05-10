@@ -21,14 +21,14 @@ private:
 	static const int EXPONENT_SIZE = 15;
 	static const int SIZE = 128;
 	
-	//Hàm cho scanf
+	//HÃ m cho scanf
 	vector<int> convert2vt_bin(string str, int type);
 	vector<int> str_dec2bin(string str);
 	vector<int> str_hex2bin(string str);
 	vector<int> str_bin2bin(string str);
 	void str_devide2(string& str);
 	void str_multi2(string& str);
-	//Hàm cho operator*
+	//HÃ m cho operator*
 	vector<int> get_exponent() const;
 	vector<int> get_snfcant() const;
 	vector<int> get_full_snfcant() const;
@@ -40,7 +40,9 @@ private:
 	vector<int> multi_snfcant(vector<int>, vector<int>, int& carry);
 	void handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snfc);
 	/*-------------------------------------------------------------*/
-	string divideSignificand(string snf1, string snf2);
+	//HÃ m cho operator /
+	QFloat divideSignificand(string snf1, string snf2);
+	int exp_proccess(string snf);
 
 public:
 	QFloat();
