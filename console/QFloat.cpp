@@ -248,15 +248,15 @@ QFloat QFloat::operator-( QFloat other)
 
 QFloat::QFloat(vector<int> vtBin) {
 	for (int i = 0; i < vtBin.size(); i++)
-		if (vtBin[i] == 1) setbit1(127 - i);
-		else setbit0(127 - i);
+		if (vtBin[i] == 1) setbit1(SIZE-1 - i);
+		else setbit0(SIZE-1- i);
 }
 
 QFloat::QFloat(string str, int base) {
 	vector<int> vtBin = convert2vt_bin(str, base);
 	for (int i = 0; i < vtBin.size(); i++)
-		if (vtBin[i] == 1) setbit1(127 - i);
-		else setbit0(127 - i);
+		if (vtBin[i] == 1) setbit1(SIZE - 1 - i);
+		else setbit0(SIZE - 1 - i);
 }
 
 void QFloat::ScanQFloat(istream& f, int base)
@@ -380,7 +380,7 @@ vector<int> QFloat::str_dec2bin(string str) {
 	long point_pos = snfcant.size();		//vị trí phân tách phần nguyên và thập phân
 	frac_part.insert(0, "0");		//thêm 0 vào đầu string phần thập phân
 
-	while (frac_part.size() > 1 && snfcant.size() < SIGNIFICANT_SIZE * 2) {//lấy thập phân nhiều cho chắc, giới hạn lại sau
+	while (frac_part.size() > 1 && snfcant.size() < pow(2, EXPONENT_SIZE - 1) + 1) {//số bit tối đa lấy được chính là số mũ tối đa, nhìn xuống phần tính mũ, dịch qua một bit là tăng lên 1 mũ
 		str_multi2(frac_part);
 		snfcant.push_back(frac_part[0] - '0');
 		frac_part[0] = '0';
@@ -423,122 +423,8 @@ vector<int> QFloat::str_dec2bin(string str) {
 	return ans;
 }
 
-vector<int> QFloat::get_exponent() const {
-	vector<int> ans;
-	for (int i = 126; i >= 112; i--)
-		ans.push_back(getBit(i));		//vì bit mũ bắt đầu từ bit số 1
-	return ans;
-}
-vector<int> QFloat::get_snfcant() const {
-	vector<int> ans;
-	for (int i = SIGNIFICANT_SIZE - 1; i >= 0; i--)
-		ans.push_back(getBit(i));
-	return ans;
-}
 
-vector<int> QFloat::multi_snfcant(vector<int> s1, vector<int> s2) {
-	vector<int> ans;
-	s1.insert(s1.begin(), 1);		//trả lại bit 1 mặc định
-	s2.insert(s2.begin(), 1);		//trả lại bit 1 mặc định
-	int carry = 0;
-	int sum = 0;
-	ans.assign(1 + SIGNIFICANT_SIZE + 1, 0);		//ans[0] là  bit nhớ phụ
-	ans.insert(ans.end(), s2.begin(), s2.end());
-	for (int i = 0; i < SIGNIFICANT_SIZE + 1; i++) {
-		if (ans.back() == 1) {
-			//Cộng s1
-			for (int j = SIGNIFICANT_SIZE + 1; j >= 1; j--) {
-				sum = ans[j] + s1[j - 1] + carry;
-				carry = sum > 1 ? 1 : 0;
-				ans[j] = sum % 2;
-			}
-			ans[0] += carry;
-		}
-		ans.pop_back();
-		ans.insert(ans.begin(), 0);
-	}
-	while (ans.size() > 0 && ans.front() == 0) ans.erase(ans.begin());
-	if (ans[0] == 1) ans.erase(ans.begin());
-	if (ans.size() < SIGNIFICANT_SIZE) ans.insert(ans.end(), SIGNIFICANT_SIZE - ans.size(), 0);
-	ans.resize(SIGNIFICANT_SIZE);
-	return ans;
-}
 
-bool QFloat::check_all_bit0(vector<int> vt) {
-	for (int i = 1; i < vt.size(); i++)
-		if (vt[i] != 0) return false;
-	return true;
-}
-
-void QFloat::set_all_bit0(vector<int>& vt) {
-	for (int i = 0; i < vt.size(); i++)
-		vt[i] = 0;
-}
-vector<int> QFloat::add_exponent(vector<int> exp1, vector<int> exp2) {
-	vector<int> ans;
-	vector<int> bias;
-	bias.assign(EXPONENT_SIZE, 1);
-	bias[0] = 0;
-
-	int carry = 0;
-	int sum = 0;
-	for (int i = EXPONENT_SIZE - 1; i >= 0; i--) {			//cộng hai phần dấu
-		sum = exp1[i] + exp2[i] - bias[i] + carry;
-		if (sum > 1) carry = 1;
-		else if (sum < 0) carry = -1;
-		else carry = 0;
-		ans.insert(ans.begin(), (sum + 2) % 2);
-	}
-
-	if (exp1[0] == exp2[0] && exp1[0] != ans[0]) {				//nếu cùng dấu mà cộng ra số trái dấu
-		if (exp1[0] == 0 && ans[0] == 1)			//âm+âm ra dương => underflow			
-			ans.insert(ans.begin(), -2);
-		else if (exp1[0] == 1 && ans[0] == 0) ans.insert(ans.begin(), 2);	//dương+dương ra âm=>overflow
-	}
-	else if (check_all_bit0(ans))//cộng ra -2^(n-1)+1 vẫn là underflow 
-		ans.insert(ans.begin(), -3);
-	else ans.insert(ans.begin(), -1);				//không thuộc trường hợp đặc biệt
-	return ans;
-}
-
-void QFloat::handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snf)
-{
-	int exp_val = 0;
-	for (int i = 0; i < EXPONENT_SIZE; i++)
-		exp_val += pow(2, EXPONENT_SIZE - i - 1);
-	exp_val -= pow(2, EXPONENT_SIZE - 1) - 1;
-
-	if (flag == -2 || flag == -3)	//underflow
-	{
-		int pass_over = flag == -2 ? pow(2, EXPONENT_SIZE - 1) - exp_val + 1 : 1;//nếu cộng ra -2(n-1)+1 thì vẫn bị underflow và phải bắn thêm 1 mũ qua phần trị
-		set_all_bit0(exp);
-		snf.insert(snf.begin(), 1);		//trả lại bit 1 mặc định
-		snf.insert(snf.begin(), pass_over, 0);		//dịch dấu chấm qua trái 
-		snf.resize(SIGNIFICANT_SIZE);			//lấy các bit trong phạm vi
-	}
-}
-QFloat QFloat::operator *(const QFloat& other)
-{
-	if (this->isZero() || other.isZero()) {
-		QFloat ans("0", 10);
-		return ans;
-	}
-
-	vector<int> exponent_ans = add_exponent(this->get_exponent(), other.get_exponent());	//cộng phần dấu
-	vector<int> snfcant_ans = multi_snfcant(this->get_snfcant(), other.get_snfcant());		//nhân phần trị
-
-	//xử lí các trường hợp đặc biệt: tràn số lớn, tràn số nhỏ, 0 nhân inf
-	int flag = exponent_ans[0];
-	exponent_ans.erase(exponent_ans.begin());
-	handle_multi_special_case(flag, exponent_ans, snfcant_ans);
-
-	vector<int> vt_ans;
-	vt_ans.assign(1, this->getBit(127) ^ other.getBit(127));			//cùng dấu thì ra dương, khác dấu ra âm
-	vt_ans.insert(vt_ans.end(), exponent_ans.begin(), exponent_ans.end());
-	vt_ans.insert(vt_ans.end(), snfcant_ans.begin(), snfcant_ans.end());
-	QFloat ans(vt_ans);
-	return ans;
-}
 
 QFloat QFloat::getZero()
 {
@@ -634,34 +520,7 @@ int QFloat::checkExponent()
 	return -1;
 }
 
-bool QFloat::isZero() const
-{
-	for (int i = 1; i < 4; i++)
-		if (m_arr[i] != 0) return false;
-	if (m_arr[0] != 0 && m_arr[0] != pow(2, 31)) return false; //bit dấu có thể là 0 hoặc 1
-	return true;
-}
 
-bool QFloat::isInf() const
-{
-	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
-		if (getBit(i) != 1) return false;
-	}
-	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
-		if (getBit(i) == 1) return false;
-
-	return true;;
-}
-
-bool QFloat::isNaN() const
-{
-	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
-		if (getBit(i) != 1) return false;
-	}
-	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
-		if (getBit(i) == 1) return true;
-	return false;
-}
 
 string QFloat::toBin()
 {
@@ -905,3 +764,209 @@ string QFloat::divideSignificand(string snf1, string snf2)
 	return string();
 }
 
+void QFloat::setNaN() {
+	for (int i = 0; i < EXPONENT_SIZE; i++)		//phần mũ toàn 1
+		setbit1(SIZE - i - 2);
+	setbit1(0);								//phần trị khác 0
+}
+void QFloat::setZero() {
+	for (int i = 0; i < SIZE; i++)					//set tất cả các bit là 0
+		setbit0(i);
+}
+void QFloat::setInf(int sign) {
+	if (sign == 1) setbit1(SIZE - 1);
+	else setbit0(SIZE - 1);
+	for(int i=0;i<EXPONENT_SIZE; i++)
+		setbit1(SIZE - 2 - i);
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+		setbit0(SIZE - 2 - EXPONENT_SIZE - i);
+}
+bool QFloat::isZero() const {
+	return check_all_bit0(get_exponent()) && check_all_bit0(get_snfcant());
+}
+bool QFloat::isDenorm() const {
+	return check_all_bit0(get_exponent()) && !check_all_bit0(get_snfcant());
+}
+bool QFloat::isInf() const {
+	return check_all_bit1(get_exponent()) && check_all_bit0(get_snfcant());
+}
+bool QFloat::isNaN() const {
+	return check_all_bit1(get_exponent()) && !check_all_bit0(get_snfcant());
+}
+
+
+bool QFloat::check_all_bit0(vector<int> vt) const {
+	for (int i = 0; i < vt.size(); i++)
+		if (vt[i] != 0) return false;
+	return true;
+}
+bool QFloat::check_all_bit1(vector<int> vt) const {
+	for (int i = 0; i < vt.size(); i++)
+		if (vt[i] != 1) return false;
+	return true;
+}
+void QFloat::set_all_bit0(vector<int>& vt) {
+	for (int i = 0; i < vt.size(); i++)
+		vt[i] = 0;
+}
+void QFloat::set_all_bit1(vector<int>& vt) {
+	for (int i = 0; i < vt.size(); i++)
+		vt[i] = 1;
+}
+vector<int> QFloat::get_exponent() const {
+	/*
+	Lấy các bit phần mũ
+	*/
+	vector<int> ans;
+	for (int i = 0; i < EXPONENT_SIZE; i++)
+		ans.push_back(getBit(SIZE - 2 - i));		
+	return ans;
+}
+vector<int> QFloat::get_snfcant() const {
+	/*
+	Lấy các bit phần trị
+	*/
+	vector<int> ans;
+	for (int i = 0; i < SIGNIFICANT_SIZE; i++)
+		ans.push_back(getBit(SIZE - 2 - EXPONENT_SIZE - i));
+	return ans;
+}
+vector<int> QFloat::get_full_snfcant() const {
+	/*
+	Lấy các bit phần trị và thêm bit mặc định (0 cho dạng không chuẩn, và 1 cho dạng chuẩn)
+	*/
+	vector<int> ans = get_snfcant();
+	ans.insert(ans.begin(), isDenorm() ? 0 : 1);
+	return ans;
+}
+vector<int> QFloat::multi_snfcant(vector<int> s1, vector<int> s2, int& carry0) {
+	/*
+	Nhân hai vector phần snfc theo thuật toán booth
+	Input: phần snfc đầy đủ (đã thêm 1 hoặc 0 tùy vào normal hay denormal)
+	Output: vector<int>. Giả sử kết quả của phép nhân là ABCDE thì hiểu phần trị có dạng A.BCDE
+	*/
+	vector<int> ans;
+	int carry = 0;
+	int sum = 0;
+	ans.assign(1 + SIGNIFICANT_SIZE + 1, 0);		//ans[0]=0 là  bit nhớ phụ
+	ans.insert(ans.end(), s2.begin(), s2.end());
+	for (int i = 0; i < SIGNIFICANT_SIZE + 1; i++) {
+		if (ans.back() == 1) {
+			//Cộng s1
+			for (int j = SIGNIFICANT_SIZE + 1; j >= 1; j--) {
+				sum = ans[j] + s1[j - 1] + carry;
+				carry = sum > 1 ? 1 : 0;
+				ans[j] = sum % 2;
+			}
+			ans[0] += carry;
+		}
+		ans.pop_back();
+		ans.insert(ans.begin(), 0);
+	}		//kết quả có dạng 0abcde với độ dài là (SIGNIFICANT_SIZE+1)*2, đc hiểu là 0ab.cde
+	ans.erase(ans.begin()); //xóa bit nhớ phụ, còn lại ab.cde
+	if (ans[0] == 1) carry0 = 1;		//Nếu a = 1 tức là phải normalize thành a.bcde và tăng số mũ lên 1(carry)
+	else ans.erase(ans.begin());	//Còn không thì xóa bit a và kết quả là b.cde
+	return ans;
+}
+vector<int> QFloat::add_exponent(vector<int> exp1, vector<int> exp2, int carry0) {
+	/*
+	Cộng hai vector phần mũ dạng bias
+	Output: hai vector chứa các bit phần mũ hai số
+	Output: vector kết quả trong đó vị trí [0] chứa flag
+			-3: phần mũ = -2^(n-1)+1 =>underflow
+			-2: phần mũ <-2^(n-1)+1  =>underflow
+			-1: phần mũ không bị tràn
+			 2: phần mũ >2^(n-1)-1	 =>overflow
+	*/
+	vector<int> ans;
+	vector<int> bias;
+	bias.assign(EXPONENT_SIZE, 1);
+	bias[0] = 0;
+	int flag = -1; //cờ mặc định là không thuộc trường hợp đặc biệt
+	int sum = 0;
+	int carry = carry0;
+	for (int i = EXPONENT_SIZE - 1; i >= 0; i--) {			//cộng hai phần dấu
+		sum = exp1[i] + exp2[i] - bias[i] + carry;
+		if (sum > 1) carry = 1;
+		else if (sum < 0) carry = -1;
+		else carry = 0;
+		ans.insert(ans.begin(), (sum + 2) % 2);
+	}
+
+	if (exp1[0] == exp2[0] && exp1[0] != ans[0]) {				//nếu cùng dấu mà cộng ra số trái dấu =>tràn số
+		if (exp1[0] == 0 && ans[0] == 1)						//âm+âm ra dương => underflow	
+			flag = -2;
+		else if (exp1[0] == 1 && ans[0] == 0)					//dương+dương ra âm=>overflow
+			flag = 2;
+	}
+	else if (check_all_bit0(ans))								//mũ bằng 000..0 = -2^(n-1)+1 => underflow 
+		flag = -3;
+	else if (check_all_bit1(ans))								//mũ bằng 111..1 = 2^(n-1) => overflow
+		flag = 2;
+
+	ans.insert(ans.begin(), flag);
+	return ans;
+}
+void QFloat::handle_multi_special_case(int flag, vector<int>& exp, vector<int>& snf)
+{
+	/*
+	Xử lí các trường hợp đặc biệt như underflow, overflow
+	Input:  flag: cờ, -3=>  underflow, số mũ = -2^(n-1)+1
+					  -2=>	underflow, số mũ < -2^(n-1)+1
+					  -1=>	bình thường
+					   2=>	overflow	
+		    exp: vector<int> các bit phần mũ
+		    snf: vector<int> các bit phần trị
+	*/
+	if (flag == -2 || flag == -3) {	//underflow
+		//tính giá trị mũ
+		int exp_val = 0;
+		for (int i = 0; i < EXPONENT_SIZE; i++)
+			exp_val += exp[i] * pow(2, EXPONENT_SIZE - i - 1);
+		exp_val -= pow(2, EXPONENT_SIZE - 1) - 1;
+
+		int pass_over = flag == -2 ? pow(2, EXPONENT_SIZE - 1) - exp_val + 2 : 1;	//khi vượt ngoài phạm vi biểu diễn(tràn số) thì giá trị sẽ quay vòng lại, nên có công thức như vậy để tính số giá trị đã quay vòng; riêng TH -2^(n-1)+1 không quay vòng nhưng vẫn tính tràn 
+		set_all_bit0(exp);						//đưa phần dấu về toàn bit 0, thể hiện số denormal
+		snf.insert(snf.begin(), pass_over, 0);		//dịch dấu chấm qua trái 	
+	}
+	else if (flag == 2) {		//overflow
+		set_all_bit1(exp);
+		set_all_bit0(snf);
+	}
+}
+QFloat QFloat::operator*(const QFloat& other)
+{
+	/*
+	Phép nhân
+	*/
+	QFloat ans;
+	int flag1 = this->isZero() ? 1 : this->isInf() ? 3 : this->isNaN() ? -1 : 5; 		//NaN là -1, zero là 1, inf là 3, còn lại là 5
+	int flag2 = other.isZero() ? 1 : other.isInf() ? 3 : other.isNaN() ? -1 : 5;
+
+	if (flag1*flag2 < 0) ans.setNaN();		//một trong hai số là NaN
+	else if (flag1*flag2 == 5) ans.setZero();	//zero*binhthuong = zero
+	else if (flag1*flag2 == 3) ans.setNaN();   //zero*inf=>NaN
+	else if (flag1*flag2 == 15) {			//inf*binhthuong = (dau bth)inf
+		if (this->isInf()) ans.setInf(this->getSign());
+		else ans.setInf(other.setSign());
+	}
+	else {								//cả hai số đều bình thường
+		int carry = 0;			//carry nếu phần trị nhân vượt quá 2 và phải normalize
+		vector<int> snfcant_ans = multi_snfcant(this->get_full_snfcant(), other.get_full_snfcant(), carry);		//nhân phần trị
+		vector<int> exponent_ans = add_exponent(this->get_exponent(), other.get_exponent(), carry);	//cộng phần dấu
+
+
+		//xử lí các trường hợp tràn số lớn, tràn số nhỏ
+		int flag = exponent_ans[0];
+		exponent_ans.erase(exponent_ans.begin());		//xóa flag
+		handle_multi_special_case(flag, exponent_ans, snfcant_ans);
+
+		vector<int> vt_ans;
+		vt_ans.assign(1, getSign() ^ other.getSign());			//insert phần dấu; cùng dấu thì ra dương, khác dấu ra âm
+		vt_ans.insert(vt_ans.end(), exponent_ans.begin(), exponent_ans.end());	//insert phần mũ
+		vt_ans.insert(vt_ans.end(), snfcant_ans.begin() + 1, snfcant_ans.begin() + SIGNIFICANT_SIZE + 1);		//insert phần trị, lấy số bit trong phạm vi ở phần trị
+		QFloat tmp(vt_ans);
+		ans = tmp;
+	}
+	return ans;
+}
