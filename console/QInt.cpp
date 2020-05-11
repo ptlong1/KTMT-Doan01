@@ -1,4 +1,5 @@
-﻿#include "QInt.h"
+﻿#include "pch.h"
+#include "QInt.h"
 
 QInt::QInt()
 {
@@ -64,7 +65,7 @@ string QInt::toDec()
 	for (int i = 0; i <= 3; i++) {
 		BigNumber k;
 		k = temp.m_arr[i];
-		k.multiPow2(32*(3-i));
+		k.multiPow2(32 * (3 - i));
 		numDec = numDec + k;
 	}
 
@@ -141,10 +142,10 @@ QInt QInt::operator+(const QInt& other)
 		for (int j = 31; j >= 0; --j)
 		{
 			//dung i, j xac dinh vi tri bit
-			nho += Getbit(m_arr[i], M - j - 1) + Getbit(other.m_arr[i],M - j - 1);
-			ans.m_arr[i] += (nho % 2)*(1 <<(M - j - 1));
+			nho += Getbit(m_arr[i], M - j - 1) + Getbit(other.m_arr[i], M - j - 1);
+			ans.m_arr[i] += (nho % 2) * (1 << (M - j - 1));
 			nho = nho / 2;
-		 }
+		}
 	}
 	return ans;
 }
@@ -209,7 +210,7 @@ pair<QInt, QInt> QInt::operator/(const QInt& other)
 		//cout << "A: " << A.toBin() << '\n';
 		//cout << "Q: " << Q.toBin() << '\n';
 		A = A << 1;
-		A.m_arr[3] += Q[127]*1;
+		A.m_arr[3] += Q[127] * 1;
 		Q = Q << 1;
 		//cout << "A1: " << A.toBin() << '\n';
 		//cout << "Q1: " << Q.toBin() << '\n';
@@ -367,7 +368,7 @@ QInt QInt::operator~()
 {
 	/*
 	Operator ~ cho QInt
-	
+
 	string str_bin;
 	for (int i = 127; i >= 0; i--) {
 		str_bin.push_back(!(this->getBit(i)));
@@ -385,16 +386,16 @@ QInt QInt::operator>>(int x)
 {
 	QInt ans;
 	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < 32; ++j)	
+		for (int j = 0; j < 32; ++j)
 		{
 			// lay bit o vi tri lien sau no
 			// vi tri cua bit hien tai la i*32 + j
 			int vt = M * (N - i - 1) + (M - j - 1);
-			ans.m_arr[i] +=(1 << (M - j - 1))*(*this)[vt + x];
+			ans.m_arr[i] += (1 << (M - j - 1)) * (*this)[vt + x];
 		}
 	return ans;
 }
- 
+
 QInt QInt::operator<<(int x)
 {
 	QInt ans;
@@ -404,7 +405,7 @@ QInt QInt::operator<<(int x)
 			// lay bit o vi tri lien truoc no
 			// vi tri cua bit hien tai la i*32 + j
 			int vt = M * (N - i - 1) + (M - j - 1);
-			ans.m_arr[i] += (*this)[vt - x]*(1 << (M - j - 1));
+			ans.m_arr[i] += (*this)[vt - x] * (1 << (M - j - 1));
 		}
 	return ans;
 }
@@ -417,7 +418,7 @@ QInt QInt::rol(int x)
 	for (int i = 1; i <= x; ++i)
 	{
 		int vti, vtj;
-		vti = N - 1 - (x - i) / 32;
+		vti = (x - i) / 32;
 		vtj = (x - i) % 32;
 		ans.m_arr[vti] = (*this)[128 - i] * (1 << vtj);
 	}
