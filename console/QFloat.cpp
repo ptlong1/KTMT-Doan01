@@ -730,7 +730,7 @@ QFloat QFloat::operator/(const QFloat& other)
 	return rs;
 }
 
-string QFloat::divideSignificand(string snf1, string snf2)
+QFloat QFloat::divideSignificand(string snf1, string snf2)
 {
 	QInt numInt1(snf1, 2), numInt2(snf2, 2);
 	pair<QInt, QInt> q_r[20];
