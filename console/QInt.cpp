@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+﻿
 #include "QInt.h"
 
 QInt::QInt()
@@ -42,15 +42,26 @@ In ra f theo base
 	if (base == 2) ans = this->toBin();
 	else if (base == 10) ans = this->toDec();
 	else if (base == 16) ans = this->toHex();
-	if (base != 10)									//Nếu là base 2 or 16 thì in ra từng cặp 8bit
-		for (int i = 0; i < ans.size(); i++) {
-			if (i != 0 && i % (ans.size() / 16) == 0)
-				f << " ";
-			f << ans[i];
+	if (base == 10)
+		f << ans << endl;
+	else {
+		int n = ans.size();
+		for (int i = 0; i < n; i++) {
+			if (i!=0 && (i % (n/8)) == 0) cout << " ";
+			cout << ans[i];
 		}
-	else f << ans;								//Base 10 thì in thẳng
+	}
+
 }
 
+string QInt::toString(int base) {
+	/*
+	Chuyển QInt về base nào đó, trả về string
+	*/
+	if (base == 2) return this->toBin();
+	else if (base == 10) return this->toDec();
+	else return this->toHex();
+}
 string QInt::toDec()
 {
 	string rs(50, '0');
@@ -120,8 +131,6 @@ string QInt::toHex()
 		}
 		rs[31 - i] = x;
 	}
-
-
 	int i = 0;
 	for (; i < rs.length(); i++) {
 		if (rs[i] != '0')
@@ -412,46 +421,31 @@ QInt QInt::operator<<(int x)
 
 QInt QInt::rol(int x)
 {
-	x = x % 128;
 	QInt ans = *this;
 	ans = ans << x; // dich trai
 	// fullfill x bit dau tien
-	for (int i = 0; i < x; i++) {
-		int temp = getBit(127 - x + 1 + i);
-		if (temp == 1)
-			ans.setbit1(i);
-		else
-			ans.setbit0(i);
-	}
-	/*for (int i = 1; i <= x; ++i)
+	for (int i = 1; i <= x; ++i)
 	{
 		int vti, vtj;
 		vti = (x - i) / 32;
 		vtj = (x - i) % 32;
 		ans.m_arr[vti] = (*this)[128 - i] * (1 << vtj);
-	}*/
+	}
 	return ans;
 }
 
 QInt QInt::ror(int x)
 {
-	x = x % 128;
-	QInt ans = *this >> x;
+	QInt ans = *this;
+	ans = ans >> x;
 	//fullfill x bit cuoi cung
-	for (int i = 0; i < x; i++) {
-		int temp = getBit(i);
-		if (temp == 1)
-			ans.setbit1(127 - x + 1 + i);
-		else
-			ans.setbit0(127 - x + 1 + i);
-	}
-	/*for (int i = 1; i <= x; ++i)
+	for (int i = 1; i <= x; ++i)
 	{
 		int vti, vtj;
 		vti = N - 1 - (128 - i) / 32;
 		vtj = (128 - i) % 32;
 		ans.m_arr[vti] = (*this)[x - i] * (1 << vtj);
-	}*/
+	}
 	return ans;
 }
 
@@ -547,7 +541,7 @@ vector<int> QInt::str_hex2bin(string str)
 			vtBin.push_back(dec_val % 2);
 			dec_val /= 2;
 		}
-		while (vtBin.size() < 4) vtBin.insert(vtBin.begin(), 0);
+		while (vtBin.size() < 4) vtBin.insert(vtBin.end(), 0);
 		ans.insert(ans.begin(), vtBin.begin(), vtBin.end());		//insert vtBin theo thứ tự ngược, để cuối cùng bit phải nhất của kết quả sẽ ở ans[0]
 	}
 	return ans;

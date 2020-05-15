@@ -20,7 +20,7 @@ public:
 
 	/* 3 ong lon */
 
-	
+	string toString(int base);
 	void ScanQInt(istream& f, int base);
 	void PrintQInt(ostream& f, int base); //xuat ra ket qua he co so option(option : 2, 10, 16,...)
 

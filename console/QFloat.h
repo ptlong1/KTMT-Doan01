@@ -67,10 +67,11 @@ public:
 	
 	string toDec();
 	string toBin();
+	string toBin_t();
 
 	void ScanQFloat(istream& f, int base);
 	void PrintQFloat(ostream& f, int base);
-	void PrintQFloat1(ostream& f, int base);
+	string toString(int base);
 
 	QFloat operator + ( QFloat other);
 	QFloat operator - ( QFloat other);
