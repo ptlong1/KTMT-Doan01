@@ -436,16 +436,17 @@ QInt QInt::rol(int x)
 
 QInt QInt::ror(int x)
 {
-	QInt ans = *this;
-	ans = ans >> x;
+	x = x % 128;
+	QInt ans = *this >> x;
 	//fullfill x bit cuoi cung
-	for (int i = 1; i <= x; ++i)
-	{
-		int vti, vtj;
-		vti = N - 1 - (128 - i) / 32;
-		vtj = (128 - i) % 32;
-		ans.m_arr[vti] = (*this)[x - i] * (1 << vtj);
+	for (int i = 0; i < x; i++) {
+		int temp = getBit(i);
+		if (temp == 1)
+			ans.setbit1(127 - x + 1 + i);
+		else
+			ans.setbit0(127 - x + 1 + i);
 	}
+
 	return ans;
 }
 
