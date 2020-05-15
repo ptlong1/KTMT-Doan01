@@ -412,31 +412,46 @@ QInt QInt::operator<<(int x)
 
 QInt QInt::rol(int x)
 {
+	x = x % 128;
 	QInt ans = *this;
 	ans = ans << x; // dich trai
 	// fullfill x bit dau tien
-	for (int i = 1; i <= x; ++i)
+	for (int i = 0; i < x; i++) {
+		int temp = getBit(127 - x + 1 + i);
+		if (temp == 1)
+			ans.setbit1(i);
+		else
+			ans.setbit0(i);
+	}
+	/*for (int i = 1; i <= x; ++i)
 	{
 		int vti, vtj;
 		vti = (x - i) / 32;
 		vtj = (x - i) % 32;
 		ans.m_arr[vti] = (*this)[128 - i] * (1 << vtj);
-	}
+	}*/
 	return ans;
 }
 
 QInt QInt::ror(int x)
 {
-	QInt ans = *this;
-	ans = ans >> x;
+	x = x % 128;
+	QInt ans = *this >> x;
 	//fullfill x bit cuoi cung
-	for (int i = 1; i <= x; ++i)
+	for (int i = 0; i < x; i++) {
+		int temp = getBit(i);
+		if (temp == 1)
+			ans.setbit1(127 - x + 1 + i);
+		else
+			ans.setbit0(127 - x + 1 + i);
+	}
+	/*for (int i = 1; i <= x; ++i)
 	{
 		int vti, vtj;
 		vti = N - 1 - (128 - i) / 32;
 		vtj = (128 - i) % 32;
 		ans.m_arr[vti] = (*this)[x - i] * (1 << vtj);
-	}
+	}*/
 	return ans;
 }
 
