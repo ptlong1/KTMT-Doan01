@@ -145,6 +145,54 @@ void BigNumber::divide2()
 	m_num = ans + m_num.substr(max);
 }
 
+void BigNumber::divide2_float()
+{
+	string x = m_num;
+	int pos_point = x.find('.');
+	if (pos_point == -1) {
+		pos_point = x.size();
+	}
+	string a = x.substr(0, pos_point);
+	string b = (pos_point == x.size()) ? "0" : x.substr(pos_point + 1);
+
+	bool check_odd = false;
+	if ((a[a.size() - 1] - '0') % 2 == 1) {
+		check_odd = true;
+		a[a.size() - 1] -= 1;
+		b = '1' + b;
+	}
+
+	BigNumber m(a);
+	m.divide2(); a = m.getNum();
+
+	if ((b[b.size() - 1] - '0') % 2 == 1) {
+		b += '0';
+	}
+
+	int i = 0;
+	for (; i < b.size(); i++) {
+		if (b[i] != '0')
+			break;
+	}
+
+	if (i != b.size()) {
+		string temp = b.substr(i);
+		BigNumber n(temp);
+		n.divide2();
+		if (temp[0] == '1' && !check_odd) i++;
+		b = string(i, '0') + n.getNum();
+	}
+	
+	i = b.size() - 1;
+	for (; i >= 0; i--)
+		if (b[i] != '0')
+			break;
+	b.erase(i+1);
+
+	m_num = (i == -1) ? a : a + '.' + b;
+}
+
+
 void BigNumber::multiPow2(int m)
 {
 	this->fixNum();
@@ -155,32 +203,8 @@ void BigNumber::multiPow2(int m)
 	}
 	else {
 		m = -m;
-		/*int number_digit = int(log10(2)*m) + 1 - m_num.size();
-		m_num += '0';
-		if (number_digit > 0) {
-			m_num += string(number_digit, '0');
-		}*/
-		int num0 = 5000;
-		m_num += string(num0, '0');
-		for (int i = 1; i <= m; i++) {
-			this->divide2();
-		}
-
-		if (m_num.size() <= num0) {
-			m_num = string(num0 - m_num.size() + 2, '0') + m_num;
-			m_num[1] = '.';
-		}
-		else {
-			m_num.insert(m_num.size() - num0, ".");
-		}
-		int i = m_num.size() - 1;
-		while (i > 0) {
-			if (m_num[i] != '0' && m_num[i] != '.') {
-				break;
-			}
-			i--;
-		}
-		m_num.erase(i + 1, m_num.size() - i - 1);
+		for (int i = 1; i <= m; i++)
+			this->divide2_float();
 	}
 }
 
