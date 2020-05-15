@@ -19,6 +19,7 @@ public:
 	BigNumber operator + (const BigNumber& other);
 	void multi2();//nhan voi 2
 	void divide2();
+	void divide2_float(); 
 	void multiPow2(int m);//nhan voi 2 mu m
 
 	BigNumber& operator = (const BigNumber& other);
