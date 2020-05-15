@@ -308,9 +308,11 @@ vector<int> QFloat::str_hex2bin(string str)
 			vtBin.insert(vtBin.begin(), dec_val % 2);
 			dec_val /= 2;
 		}
-		while (vtBin.size() < 4) vtBin.insert(vtBin.begin(), 0);
+		while (vtBin.size() < 4) vtBin.insert(vtBin.end(), 0);
 		ans.insert(ans.end(), vtBin.begin(), vtBin.end());
 	}
+
+
 	return ans;
 }
 
@@ -577,6 +579,13 @@ string QFloat::toBin()
 	return rs;
 }
 
+string QFloat::toBin_t() {
+	string ans;
+	for (int i = 0; i < SIZE; i++)
+		ans.insert(0, 1, getBit(i) + '0');
+	return ans;
+}
+
 string QFloat::toDec()
 {
 	if (this->isNaN())
@@ -636,6 +645,10 @@ void QFloat::PrintQFloat(ostream& f, int base)
 	else if (base == 10) f << this->toDec()<<endl;
 }
 
+string QFloat::toString(int base) {
+	if (base == 2) return this->toBin_t();
+	else return this->toDec();
+}
 QFloat QFloat::operator/(const QFloat& other)
 {
 	QFloat temp = other;
@@ -1015,24 +1028,4 @@ QFloat QFloat::operator*(const QFloat& other)
 	return ans;
 }
 
-void QFloat::PrintQFloat1(ostream& f, int base)	//Hàm test 
-{
-	if (base == 2) {
-		for (int i = 0; i < SIZE; i++) {
-			f << getBit(SIZE - 1 - i);
-			if (i == 0 || i == 15) f << " ";
-		}
-		f << endl;
-	}
-	else if (base == 10) {
-		double ans = 0;
-		long exp = 0;
-		for (int i = 0; i < SIGNIFICANT_SIZE; i++)
-			ans += getBit(SIZE-2-EXPONENT_SIZE-i)* pow(2, -i - 1);
-		ans += 1;
-		for (int i = 0; i < EXPONENT_SIZE; i++)
-			exp += getBit(SIZE-2-i)*pow(2, EXPONENT_SIZE - i - 1);
-		exp -= pow(2, EXPONENT_SIZE - 1) - 1;
-		f << ans * pow(2, exp) << endl;
-	}
-}	   //Hàm test
+
