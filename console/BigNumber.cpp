@@ -43,6 +43,7 @@ void BigNumber::print()
 string BigNumber::getNum()
 {
 	this->fixNum();
+	if (m_num == "") return "0";
 	return m_num;
 }
 
