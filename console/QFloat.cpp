@@ -338,7 +338,7 @@ void QFloat::str_multi2(string& str) {
 	*/
 	int tmp = 0;
 	int carry = 0;
-	for (int i = str.size() - 1; i >= 0; i--) {
+	for (size_t i = str.size() - 1; i >= 0; i--) {
 		tmp = (str[i] - '0') * 2 + carry;
 		carry = tmp >= 10 ? 1 : 0;
 		str[i] = tmp % 10 + '0';
@@ -382,10 +382,12 @@ vector<int> QFloat::str_dec2bin(string str) {
 	long point_pos = snfcant.size();		//vị trí phân tách phần nguyên và thập phân
 	frac_part.insert(0, "0");		//thêm 0 vào đầu string phần thập phân
 
-	while (frac_part.size() > 1 && snfcant.size() < pow(2, EXPONENT_SIZE - 1) + 1) {//số bit tối đa lấy được chính là số mũ tối đa, nhìn xuống phần tính mũ, dịch qua một bit là tăng lên 1 mũ
+	while (frac_part.size() > 1 && snfcant.size() < pow(2, EXPONENT_SIZE - 1) + SIGNIFICANT_SIZE + 2) {//số bit tối đa lấy được chính là số mũ tối đa, nhìn xuống phần tính mũ, dịch qua một bit là tăng lên 1 mũ
 		str_multi2(frac_part);
 		snfcant.push_back(frac_part[0] - '0');
 		frac_part[0] = '0';
+		if (snfcant.size() == pow(2, EXPONENT_SIZE - 1))
+			int a = 1;
 	}//phần trị bây giờ có số bit khá nhiều, chưa giới hạn
 
 	//xử lí exponent
