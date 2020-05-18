@@ -338,7 +338,7 @@ void QFloat::str_multi2(string& str) {
 	*/
 	int tmp = 0;
 	int carry = 0;
-	for (size_t i = str.size() - 1; i >= 0; i--) {
+	for (int i = str.size() - 1; i >= 0; i--) {
 		tmp = (str[i] - '0') * 2 + carry;
 		carry = tmp >= 10 ? 1 : 0;
 		str[i] = tmp % 10 + '0';
