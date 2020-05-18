@@ -80,7 +80,9 @@ QFloat QFloat::CongPhanMu(int x)
 		if (!(tmp % 2) && ans[i] == 1) Daobit(ans.m_arr[vti], vtj);
 		nho = tmp / 2;
 	}
-	return ans;
+	for (int i = 112; i < 127; ++i)
+		if (ans[i] == 0) return ans;
+	return ans.getInf();
 }
 
 void QFloat::GanDauvaMu(QFloat x)
@@ -117,7 +119,9 @@ QFloat QFloat::operator+(QFloat other)
 
 	//so sanh, dua ve dang a > b
 	if (mu_2 > mu_1 || (mu_1 == mu_2 && b >= a)) swap(a, b), swap(mu_1, mu_2);
-	
+	if (a.isInf()) return a;
+	if (a.isNaN()) return a;
+
 	//chenh lech so mu
 	int mu_diff = mu_1 - mu_2;
 
@@ -126,6 +130,7 @@ QFloat QFloat::operator+(QFloat other)
 	b = b >> mu_diff;
 	int vt1 = 112 - mu_diff;
 	//them bit 1 dung dau
+	if (mu_2 != 0)
 	Batbit(b.m_arr[3 - vt1 / 32], vt1 % 32);
 
 	int nho = 0;
@@ -160,13 +165,20 @@ QFloat QFloat::operator+(QFloat other)
 			//neu nhu b o dang chuan, cong 2 so 1 dung dau
 			//2 trung hop
 			// 11. 10.
-			ans = ans >> 1;
-			if (nho == 1) // 11.
+			if (mu_1 != 0)
 			{
-				Batbit(ans.m_arr[3 - 111 / 32], 111 % 32); // bat bit 1
+				ans = ans >> 1;
+				if (nho == 1) // 11.
+				{
+					Batbit(ans.m_arr[3 - 111 / 32], 111 % 32); // bat bit 1
+				}
+				ans = ans.CongPhanMu(1);
+				//tang phan mu len 1
 			}
-			ans = ans.CongPhanMu(1);
-			//tang phan mu len 1
+			else
+			{
+				if (nho == 1) ans.CongPhanMu(1);
+			}
 		}
 	}
 	else
@@ -209,31 +221,34 @@ QFloat QFloat::operator+(QFloat other)
 		else
 		{
 			//neu ca 2 o dang chuan
-			if (nho == 0) // 1.xxx - 1.xxx = 0.xxxx
-				// khong co th nho == 1 vi a >= b
+			if (mu_1 != 0)
 			{
-				int vt = -1;
-				for (int i = 111; i >= 0; --i)
-					if (ans[i] == 1)
-					{
-						vt = i;
-						break;
-					}
-				if (vt == -1) // neu tim khong ra aka 2 so bang nhau
+				if (nho == 0) // 1.xxx - 1.xxx = 0.xxxx
+					// khong co th nho == 1 vi a >= b
 				{
-					/*
-					for (int i = 126; i > 111; --i)
+					int vt = -1;
+					for (int i = 111; i >= 0; --i)
 						if (ans[i] == 1)
-							Daobit(ans.m_arr[3 - i / 32], i % 32);
-					*/
-					QFloat zero;
-					return zero;
-					//tra ve zero
-			}
-				else
-				{
-					ans = ans << (112 - vt);
-					ans = ans.CongPhanMu(-(112 - vt));
+						{
+							vt = i;
+							break;
+						}
+					if (vt == -1) // neu tim khong ra aka 2 so bang nhau
+					{
+						/*
+						for (int i = 126; i > 111; --i)
+							if (ans[i] == 1)
+								Daobit(ans.m_arr[3 - i / 32], i % 32);
+						*/
+						QFloat zero;
+						return zero;
+						//tra ve zero
+					}
+					else
+					{
+						ans = ans << (112 - vt);
+						ans = ans.CongPhanMu(-(112 - vt));
+					}
 				}
 			}
 		}
