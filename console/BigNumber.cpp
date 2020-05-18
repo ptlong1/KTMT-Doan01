@@ -21,6 +21,7 @@ BigNumber::~BigNumber()
 {
 }
 
+/*Xóa các số 0 vô nghĩa ở đầu*/
 void BigNumber::fixNum()
 {
 	int i = 0;
@@ -34,12 +35,14 @@ void BigNumber::fixNum()
 	m_num.erase(0, i);
 }
 
+/*In ra màn hình console*/
 void BigNumber::print()
 {
 	this->fixNum();
 	cout << m_num << endl;
 }
 
+/*Lấy số bigNumber đang được lưu*/
 string BigNumber::getNum()
 {
 	this->fixNum();
@@ -47,6 +50,7 @@ string BigNumber::getNum()
 	return m_num;
 }
 
+/*Toán tử cộng*/
 BigNumber BigNumber::operator+(const BigNumber & other)
 {
 	string str1 = m_num;
@@ -55,29 +59,25 @@ BigNumber BigNumber::operator+(const BigNumber & other)
 	if (str1.length() > str2.length())
 		swap(str1, str2);
 
-	// Take an empty string for storing result 
-	string str = "";
+	string str = "";// Lưu kết quả
 
-	// Calculate length of both string 
 	int n1 = str1.length(), n2 = str2.length();
 
-	// Reverse both of strings 
+	// Đảo chuổi
 	reverse(str1.begin(), str1.end());
 	reverse(str2.begin(), str2.end());
 
 	int carry = 0;
 	for (int i = 0; i < n1; i++)
 	{
-		// Do school mathematics, compute sum of 
-		// current digits and carry 
+		// cộng 2 chữ số tương ứng và cộng thêm nhớ (nếu có)
 		int sum = ((str1[i] - '0') + (str2[i] - '0') + carry);
 		str.push_back(sum % 10 + '0');
 
-		// Calculate carry for next step 
-		carry = sum / 10;
+		carry = sum / 10; //lưu số nhớ
 	}
 
-	// Add remaining digits of larger number 
+	//cộng tiếp vào phần dư ra 
 	for (int i = n1; i < n2; i++)
 	{
 		int sum = ((str2[i] - '0') + carry);
@@ -85,16 +85,17 @@ BigNumber BigNumber::operator+(const BigNumber & other)
 		carry = sum / 10;
 	}
 
-	// Add remaining carry 
+	// thêm số 1 nếu như còn nhớ ở chữ số cuối cùng 
 	if (carry)
 		str.push_back(carry + '0');
 
-	// reverse resultant string 
+	//đảo lại chuỗi
 	reverse(str.begin(), str.end());
 
 	return BigNumber(str);
 }
 
+//Nhân một số nguyên với hai
 void BigNumber::multi2()
 {
 	this->fixNum();
@@ -145,6 +146,7 @@ void BigNumber::divide2()
 	m_num = ans + m_num.substr(max);
 }
 
+//Nhân một số thực với hai
 void BigNumber::divide2_float()
 {
 	string x = m_num;
@@ -192,7 +194,7 @@ void BigNumber::divide2_float()
 	m_num = (i == -1) ? a : a + '.' + b;
 }
 
-
+//Nhân một số với 2 mũ m (m có thể âm hoặc dương)
 void BigNumber::multiPow2(int m)
 {
 	this->fixNum();
@@ -208,6 +210,7 @@ void BigNumber::multiPow2(int m)
 	}
 }
 
+//toán tử gán bằng một số BigNumber khác
 BigNumber& BigNumber::operator=(const BigNumber & other)
 {
 	if (this != &other) {
@@ -217,6 +220,7 @@ BigNumber& BigNumber::operator=(const BigNumber & other)
 	return *this;
 }
 
+//Toán tử gán bằng 1 số nguyên int
 BigNumber & BigNumber::operator=(const int & x)
 {
 	unsigned int temp = x;
