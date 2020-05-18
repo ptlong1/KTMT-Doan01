@@ -432,11 +432,13 @@ vector<int> QFloat::str_dec2bin(string str) {
 
 QFloat QFloat::getZero()
 {
+	/*Trả về số 0*/
 	return QFloat();
 }
 
 QFloat QFloat::getInf()
 {
+	/*Trả về số vô cùng*/
 	QFloat x;
 	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
 		x.setbit1(i);
@@ -446,6 +448,7 @@ QFloat QFloat::getInf()
 
 QFloat QFloat::getNaN()
 {
+	/*Trả về số báo lỗi*/
 	QFloat x;
 	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
 		x.setbit1(i);
@@ -461,11 +464,13 @@ QFloat::~QFloat()
 
 int QFloat::getSign() const
 {
+	/*Lấy phần dấu*/
 	return this->getBit(127);
 }
 
 int QFloat::getExp()
 {
+	/*Lấy phần mũ và chuyển về dạng thập phân*/
 	string exp(15, '0');
 	for (int i = 112; i < 127; i++)
 	{
@@ -476,12 +481,15 @@ int QFloat::getExp()
 		if (exp[i] == '1')
 			x = x | (1 << (14 - i));
 	}
+	if (x == 0) return -EXPONENT_BIAS_VALUE + 1;
 	return x - 16383;//2^14 - 1 = 16383
 }
 
 string QFloat::getSignificand()
 {
-
+	/*
+	lấy phần trị
+	*/
 	int i = 0;
 	while (i < 112) {
 		if (this->getBit(i) == 1)
@@ -502,32 +510,45 @@ string QFloat::getSignificand()
 
 int QFloat::getBit(int i) const
 {
+	/*Lấy giá trị bit thứ i (tính từ phải qua)*/
 	i = i % 128;
 	return ((m_arr[3 - i / 32] >> (i % 32)) & 1);
 }
 
 void QFloat::setbit1(int i)
 {
+	/*gán giá trị bit thứ i bằng 1*/
 	m_arr[3 - i / 32] = m_arr[3 - i / 32] | (1 << (i % 32));
 }
 
 void QFloat::setbit0(int i)
 {
+	/*gán giá trị bit thứ i bằng 0*/
 	m_arr[3 - i / 32] = (~(1 << (i % 32))) & m_arr[3 - i / 32];
 }
 
 int QFloat::checkExponent()
 {
-	int exp = this->getExp();
-	if (exp == -16383) return 0;
-	if (exp == 16383) return 1;
-	return -1;
+	/*Kiểm tra phần mũ có thuộc các trường hợp đặc biệt hay không?*/
+	bool check0 = false, check1 = false;
+	for (int i = 112; i < 127; i++) {
+		char x = this->getBit(i);
+		if (x == 1) check1 = true;
+		if (x == 0) check0 = true;
+	}
+
+	if (check0 && check1) return -1;//không thuộc trường hợp đặc biệt
+	if (check0) return 0;//phần mũ toàn là bit 0
+	if (check1) return 1;//phần mũ toàn là bit 1 
 }
 
 
 
 string QFloat::toBin()
 {
+	/*
+	Chuyển sang nhị phân
+	*/
 	if (this->isNaN())
 		return "NaN";
 
@@ -590,6 +611,9 @@ string QFloat::toBin_t() {
 
 string QFloat::toDec()
 {
+	/*
+	Chuyển sang thập phân
+	*/
 	if (this->isNaN())
 		return "NaN";
 
@@ -607,7 +631,7 @@ string QFloat::toDec()
 	if (checkExponent() == 0)
 	{
 		/*------------bieu dien so khog chuan----------*/
-		exp += 1; // exp = -2^14 + 2
+		// exp = -2^14 + 2
 		rs[0] = '0';
 	}
 
@@ -621,7 +645,6 @@ string QFloat::toDec()
 
 	temp.erase(0, x); //loai bo cac so 0 dung dau vo nghia
 
-	//ko phai 2 truong hop tren
 	int expNew = exp - significand.size();//vi dich chuyen dau phay qua tan cung ben phai trong phan tri
 	QInt numInt;
 	//cout << significand << '\n';
@@ -642,6 +665,9 @@ string QFloat::toDec()
 
 void QFloat::PrintQFloat(ostream& f, int base)
 {
+	/*
+	Xuất số chấm động được lưu theo cơ số base
+	*/
 	string ans;
 	if (base == 2) f << this->toBin()<<endl;
 	else if (base == 10) f << this->toDec()<<endl;
@@ -651,14 +677,17 @@ string QFloat::toString(int base) {
 	if (base == 2) return this->toBin_t();
 	else return this->toDec();
 }
+
 QFloat QFloat::operator/(const QFloat& other)
 {
 	QFloat temp = other;
 	
-	if (temp.isNaN() || this->isNaN())
+	/*Kiểm tra các trường hợp đặc biệt*/
+	if (temp.isNaN() || this->isNaN()) //một trong hai số là số báo lỗi
 		return getNaN();
 
- 	if (this->isInf()) {
+ 	if (this->isInf()) //trường hợp là số vô cùng
+	{
 		if (temp.isInf()){
 			return getNaN();
 		}
@@ -666,13 +695,13 @@ QFloat QFloat::operator/(const QFloat& other)
 	}
 	
 	//Kiem tra chia 0
-	if (temp.isZero()) {
+	if (temp.isZero()) 
+	{
 		return getNaN();
 	}
 
-	//co la vo cung hay k
-
-	if (this->isZero()) {
+	if (this->isZero()) 
+	{
 		return getZero();
 	}
 
@@ -680,65 +709,89 @@ QFloat QFloat::operator/(const QFloat& other)
 	int exp1 = this->getExp();
 	int exp2 = temp.getExp();
 
-	int newExp = exp1 - exp2;
+	int newExp = exp1 - exp2; //Lấy phần mũ trừ nhau
 	
-	if (newExp >=EXPONENT_BIAS_VALUE + 1) {
+	if (newExp >= EXPONENT_BIAS_VALUE + 1) //overflow
+	{
 		return getInf();
 	} 
 
-	if (newExp < -EXPONENT_BIAS_VALUE + 2 - SIGNIFICANT_SIZE) {
+	if (newExp < -EXPONENT_BIAS_VALUE + 2 - SIGNIFICANT_SIZE) //underflow
+	{
 		return getZero();
 	}
 
 	/*--------------------------------------------------------*/
 
- 	string significand1 = this->getSignificand();
-	string significand2 = temp.getSignificand();
-	/*if (significand1.size() < exp1)
-		significand1 += string(exp1 - significand1.size(), '0');
-	if (significand2.size() < exp2)
-		significand2 += string(exp2 - significand2.size(), '0');*/
+ 	string significand1 = this->getSignificand(); //lấy phần trị số thứ nhất
+	string significand2 = temp.getSignificand(); //lấy phần trị số thứ hai
 
 	string value1 = "0", value2 = "0";
 
-	if (exp1 != -EXPONENT_BIAS_VALUE)
+	if (this->checkExponent() != 0) //kiem tra phan mu co toan la bit 0 hay ko?
 		value1 = "1";
-	if (exp2 != -EXPONENT_BIAS_VALUE) 
+	if (temp.checkExponent() != 0) //kiem tra phan mu co toan la bit 0 hay ko? 
 		value2 = "1";
 	
 
 	int e_snf12 = significand1.size() - significand2.size();
-	/*if (significand1 == "0") 
-		e_snf12 += 1;
-	else*/
-		value1 += significand1; 
 
-	/*if (significand2 == "0")
-		e_snf12 -= 1;
-	else*/
-		value2 += significand2;
+	value1 += significand1; //đưa về số nhị phân
+	value2 += significand2; //đưa về số nhị phân
 
-	//Chia phan tri
+	/*---------------------------------------------------------------*/
+	/*-----------------Chia phan tri---------------------------------*/
 	QFloat div_snf;
-	div_snf = divideSignificand(value1, value2);
+	div_snf = divideSignificand(value1, value2); //kết quả chia phần trị
 	
-	//Xu ly dau phay phan tri
-	int exp_snf = div_snf.getExp();
+	int exp_snf = div_snf.getExp();//lay phan mu trong ket qua chia significant
+	string value = '1' + div_snf.getSignificand();
 
-	//Xu ly phan mu (exp va phan mu trong phan tri)
-	newExp += (exp_snf) - e_snf12 + EXPONENT_BIAS_VALUE;
-	
+	/*---------------------------------------------------------------*/
+	/*-----------Xu ly phan mu (exp va phan mu trong phan tri)-------*/
+	newExp += (exp_snf)-e_snf12 + EXPONENT_BIAS_VALUE;//đưa về dạng Bias N=15
+
+	if (newExp < 1) //Xử lý trường hợp số mũ nhỏ hơn biểu diễn dạng chuẩn -> dạng không chuẩn
+	{
+		newExp--;
+		if (newExp <= -112) //quá nhỏ, không thể biểu diễn -> 0
+			return getZero();
+		
+		//xu ly phan tri
+		value = string(-newExp - 1, '0') + value; //dịch chuyển phần trị để đưa về dạng không chuẩn
+		if (value.size() < SIGNIFICANT_SIZE)
+			value += string(SIGNIFICANT_SIZE - value.size(), '0');
+		else if (value.size() > SIGNIFICANT_SIZE)
+			value.resize(SIGNIFICANT_SIZE);
+		
+		for (int i = 0; i < SIGNIFICANT_SIZE; i++) {
+			if (value[SIGNIFICANT_SIZE - 1 - i] == '1')
+				div_snf.setbit1(i);
+			else
+				div_snf.setbit0(i);
+		}
+		newExp = 0; //đưa mũ về dạng toàn bit 0
+
+	}
+	if (newExp >= EXPONENT_BIAS_VALUE*2 + 1) //số mũ quá lớn -> vô cùng (Inf)
+	{
+		return getInf();
+	}
+
 	/*-----------------------------------------------------------------------------*/
+	/*---------------Khởi tạo kết quả----------------------------------------------*/
 	QFloat rs;
 	rs = div_snf;
-	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
+	
+	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) //Gán phần mũ
+	{
 		if ((newExp >> (i - 112)) & 1 == 1)
 			rs.setbit1(i);
 		else
 			rs.setbit0(i);
 	}
 
-	if (this->getSign() != temp.getSign())
+	if (this->getSign() != temp.getSign()) //kiểm tra dấu
 		rs.setbit1(127);
 
 	
@@ -747,14 +800,20 @@ QFloat QFloat::operator/(const QFloat& other)
 
 QFloat QFloat::divideSignificand(string snf1, string snf2)
 {
+	/*--Chuyển về số nguyên lớn QInt để thực hiện phép chia--*/
 	QInt numInt1(snf1, 2), numInt2(snf2, 2);
-	pair<QInt, QInt> q_r[20];
+	pair<QInt, QInt> q_r[20];//Mảng lưu thương và số dư
 	q_r[0] = numInt1 / numInt2;
 	
 	string value = q_r[0].first.toBin();
 	int exp_snf = value.size()-1;
 
-	/*Chia lay thuong co nhieu hon 112 so co nghia*/
+	/*Thực hiện chia nhiều lần để thương có nhiều hơn 112 số có nghĩa */
+	/*---------------------------Ý tưởng------------------------------*/
+	//a = b*q1 + r1
+	//r1 = b*q2 + r2
+	//...
+	//Sau đó ghép các thương q1, q2,... ta sẽ được kết quả
 	for (int i = 1; i < 20; i++) {
 		string  tmp;
 		q_r[i] = (q_r[i - 1].second << 15) / numInt2; //Dich phai 15 bit (*2^15)
@@ -765,13 +824,11 @@ QFloat QFloat::divideSignificand(string snf1, string snf2)
 	}
 
 	//Xử lý phần mũ dư ra
-	exp_snf += /*-exp_proccess(snf1) + exp_proccess(snf2)*/ - exp_proccess(value);//2^exp_snf
-	/*if (snf2 == "1") {
-		exp_snf += snf1.size() - 1;
-	}*/
-	exp_snf = exp_snf + EXPONENT_BIAS_VALUE;
+	exp_snf -= exp_proccess(value);//2^exp_snf
 	
-	//Xử lý đưa về dạng formalize: xxxxxx
+	exp_snf = exp_snf + EXPONENT_BIAS_VALUE;//chuyển về dạng bias N = 15
+	
+	//Xử lý phần trị, đưa về dạng formalize: xxx...xx
 	int pos1_value = value.find('1', 0);
 	if (pos1_value != -1)
 		value.erase(0, pos1_value + 1);
@@ -781,32 +838,29 @@ QFloat QFloat::divideSignificand(string snf1, string snf2)
 	else if (value.size() > SIGNIFICANT_SIZE)
 		value.resize(SIGNIFICANT_SIZE);
 
-	//Khoi tao ket qua
+	//Khởi tạo kết quả
 	QFloat rs;
-	
+	//set phần trị
 	for (int i = 0; i < SIGNIFICANT_SIZE; i++) {
 		if (value[SIGNIFICANT_SIZE -1- i] == '1')
 			rs.setbit1(i);
 	}
-
+	//set phần mũ
 	for (int i = SIGNIFICANT_SIZE; i < SIGNIFICANT_SIZE + EXPONENT_SIZE; i++) {
 		if ((exp_snf >> (i - SIGNIFICANT_SIZE)) & 1 == 1)
 			rs.setbit1(i);
 	}
 
-	/*QFloat x = rs * QFloat("0.45703125", 10);
-	cout << x.toDec() << endl;*/
-
 	return rs;
-
 }
 
 int QFloat::exp_proccess(string snf)
 {
+//kiểm tra xem phần trị có bắt đầu bằng '0' hay không?
 	if (snf[0] == '0') 
-		return snf.find('1', 0);
+		return snf.find('1', 0);//trả về vị trí đầu tiên xuất hiện '1' nếu bắt đầu là '0'
 
-	return 0;
+	return 0;//trả về 0 trong TH ngược lại
 }
 
 void QFloat::setNaN() {
