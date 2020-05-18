@@ -99,7 +99,7 @@ string handle_line(string line, int type) {
 	vector<string> operands;	//các toán hạng
 
 	//xác định là thực hiện phép toán hay chuyển đổi cơ số
-	bool is_convert = line.find_first_of("+-*/><=&|^~>><<rorrol") == string::npos;	//nếu không xuất hiện các phép toán tức là thực hiện chuyển đổi giữa hai base
+	bool is_convert = line.find_first_of("+*/><=&|^~>><<rorrol") == string::npos;	//nếu không xuất hiện các phép toán tức là thực hiện chuyển đổi giữa hai base
 	vector<int> minus_pos;					//vì dấu trừ có thể xuất hiện ở số âm 
 	minus_pos.push_back(line.find('-'));
 	while (minus_pos.back() != -1)	minus_pos.push_back(line.find('-', minus_pos.back() + 1));//lấy tất cả vị trí xuất hiện dấu trừ
