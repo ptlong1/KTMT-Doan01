@@ -98,7 +98,13 @@ string handle_line(string line, int type) {
 	string operatr;				//toán tử
 	vector<string> operands;	//các toán hạng
 
+	//xác định là thực hiện phép toán hay chuyển đổi cơ số
 	bool is_convert = line.find_first_of("+-*/><=&|^~>><<rorrol") == string::npos;	//nếu không xuất hiện các phép toán tức là thực hiện chuyển đổi giữa hai base
+	vector<int> minus_pos;					//vì dấu trừ có thể xuất hiện ở số âm 
+	minus_pos.push_back(line.find('-'));
+	while (minus_pos.back() != -1)	minus_pos.push_back(line.find('-', minus_pos.back() + 1));//lấy tất cả vị trí xuất hiện dấu trừ
+	for (int i = 0; i < minus_pos.size(); i++)
+		if (minus_pos[i] != -1 && line[minus_pos[i] - 1] == ' ' && line[minus_pos[i] + 1] == ' ') is_convert = false;	//nếu tồn tại 1 vị trí mà trước và sau dấu trừ đó là khoảng trắng thì nó là phép toán
 
 	//tách các thành phần trong dòng (cách nhau bằng khoảng trắng)
 	vector<string> para;	//các thành phần trong dòng
