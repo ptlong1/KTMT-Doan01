@@ -3,6 +3,7 @@
 
 QInt::QInt()
 {
+	//Khởi tạo mặc định bằng 0
 	for (int i = 0; i < 4; i++)
 		m_arr[i] = 0;
 }
@@ -64,6 +65,9 @@ string QInt::toString(int base) {
 }
 string QInt::toDec()
 {
+	/*
+	Chuyển sang số thập phân
+	*/
 	string rs(50, '0');
 	char signThis = this->getBit(127);
 	QInt temp = *this;
@@ -92,6 +96,9 @@ string QInt::toDec()
 
 string QInt::toBin()
 {
+	/*
+	Chuyển sang nhị phân
+	*/
 	string rs(128, '0');
 
 	for (int i = 0; i < 128; i++) {
@@ -110,6 +117,9 @@ string QInt::toBin()
 
 string QInt::toHex()
 {
+	/*
+	Chuyển sang thập lục phân
+	*/
 	string rs(32, '0');
 
 	for (int i = 0; i < 32; i++) {
@@ -245,6 +255,9 @@ pair<QInt, QInt> QInt::operator/(const QInt& other)
 
 bool QInt::operator > (QInt other)
 {
+	/*
+	Toán tử so sánh lớn hơn
+	*/
 	int signThis = this->getBit(127);
 	int signOther = other.getBit(127);
 	if (signThis == signOther)
@@ -266,11 +279,19 @@ bool QInt::operator > (QInt other)
 
 bool QInt::operator >= (QInt other)
 {
+	
+	/*
+	Toán tử so sánh lớn hơn hoặc bằng
+	*/
 	return !(*this < other);
 }
 
 bool QInt::operator < (QInt other)
 {
+	
+	/*
+	Toán tử so sánh bé hơn
+	*/
 	int signThis = this->getBit(127);
 	int signOther = other.getBit(127);
 	if (signThis == signOther)
@@ -292,11 +313,19 @@ bool QInt::operator < (QInt other)
 
 bool QInt::operator <= (QInt other)
 {
+	
+	/*
+	Toán tử so sánh bé hơn hoặc bằng
+	*/
 	return !(*this > other);
 }
 
 bool QInt::operator != (QInt other)
 {
+	
+	/*
+	Toán tử so sánh khác
+	*/
 	for (int i = 127; i >= 0; i--) {
 		if (this->getBit(i) != other.getBit(i))
 			return true;
@@ -306,6 +335,10 @@ bool QInt::operator != (QInt other)
 
 bool QInt::operator == (QInt other)
 {
+	
+	/*
+	Toán tử so sánh bằng
+	*/
 	return !(*this != other);
 }
 
@@ -473,22 +506,34 @@ int QInt::operator[](int i)
 
 int QInt::getBit(int i) const
 {
+	/*
+	lấy giá trị bit thứ i (tính từ phải qua)
+	*/
 	i = i % 128;
 	return ((m_arr[3 - i / 32] >> (i % 32)) & 1);
 }
 
 void QInt::setbit1(int i)
 {
+	/*
+	gán giá trị bit thứ i bằng 1 
+	*/
 	m_arr[3 - i / 32] = m_arr[3 - i / 32] | (1 << (i % 32));
 }
 
 void QInt::setbit0(int i)
 {
+	/*
+	gán giá trị bit thứ i bằng 0
+	*/
 	m_arr[3 - i / 32] = (~(1 << (i % 32))) & m_arr[3 - i / 32];
 }
 
 QInt QInt::getTowComplement()
 {
+	/*
+	lấy bù hai
+	*/
 	QInt rs;
 	for (int i = 0; i < 4; i++) {
 		rs.m_arr[i] = ~this->m_arr[i];
