@@ -457,12 +457,11 @@ QInt QInt::rol(int x)
 	QInt ans = *this;
 	ans = ans << x; // dich trai
 	// fullfill x bit dau tien
-	for (int i = 1; i <= x; ++i)
-	{
-		int vti, vtj;
-		vti = (x - i) / 32;
-		vtj = (x - i) % 32;
-		ans.m_arr[vti] = (*this)[128 - i] * (1 << vtj);
+	for (int i = 0; i < x; i++) {
+		if (getBit(127 - x - i + 1) == 1)
+			ans.setbit1(i);
+		else
+			ans.setbit0(i);
 	}
 	return ans;
 }
